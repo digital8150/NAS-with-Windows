@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const os = require('os');
 const config = require('../config');
 const {
     getClientIp,
@@ -17,7 +18,7 @@ const {
 
 /**
  * GET /api/auth/status
- * 현재 클라이언트 IP의 보안 상태(잠금 여부, 남은 시도 횟수) 및 세션 인증 여부 반환
+ * 현재 클라이언트 IP의 보안 상태(잠금 여부, 남은 시도 횟수) 및 세션 인증 여부, 온보딩 필요 여부 반환
  */
 router.get('/status', (req, res) => {
     const ip = getClientIp(req);
@@ -30,6 +31,8 @@ router.get('/status', (req, res) => {
 
     return res.json({
         authenticated,
+        needsSetup: !config.isSetupCompleted(),
+        serverName: os.hostname(),
         user: authenticated ? { role: decoded.role } : null,
         security: {
             ip,
@@ -38,6 +41,54 @@ router.get('/status', (req, res) => {
             failedAttempts: secStatus.failedAttempts,
             remainingAttempts: secStatus.remainingAttempts
         }
+    });
+});
+
+/**
+ * POST /api/auth/setup
+ * 최초 접속 시 마스터 비밀번호 설정 (온보딩)
+ */
+router.post('/setup', (req, res) => {
+    // 이미 초기 설정이 완료된 경우 차단
+    if (config.isSetupCompleted()) {
+        return res.status(400).json({
+            error: 'Bad Request',
+            message: '초기 설정이 이미 완료되었습니다.'
+        });
+    }
+
+    const { password } = req.body || {};
+
+    if (!password || typeof password !== 'string' || password.trim().length < 4) {
+        return res.status(400).json({
+            error: 'Bad Request',
+            message: '비밀번호를 4자 이상 입력해 주세요.'
+        });
+    }
+
+    const trimmedPassword = password.trim();
+
+    // 비밀번호 저장 및 환경 설정 갱신
+    config.saveSetupPassword(trimmedPassword);
+
+    const ip = getClientIp(req);
+    recordLoginSuccess(ip);
+
+    // 자동 로그인 토큰 발급 및 HttpOnly 쿠키 설정
+    const token = issueToken({ role: 'admin' });
+
+    res.cookie(config.COOKIE_NAME, token, {
+        httpOnly: true,
+        secure: config.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: config.COOKIE_MAX_AGE_MS,
+        path: '/'
+    });
+
+    return res.json({
+        success: true,
+        message: '설정이 완료되었습니다.',
+        user: { role: 'admin' }
     });
 });
 

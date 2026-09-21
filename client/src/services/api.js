@@ -35,6 +35,23 @@ export async function logout() {
   return res.json();
 }
 
+export async function setupPassword(password) {
+  const res = await fetch(`${BASE_URL}/api/auth/setup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ password })
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const error = new Error(data.message || '초기 설정에 실패했습니다.');
+    error.status = res.status;
+    error.data = data;
+    throw error;
+  }
+  return data;
+}
+
 export async function getDrives(refresh = false) {
   const res = await fetch(`${BASE_URL}/api/drives${refresh ? '?refresh=true' : ''}`, {
     credentials: 'include'

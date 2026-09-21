@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ExplorerProvider, useExplorer } from './contexts/ExplorerContext';
 import Sidebar from './components/layout/Sidebar';
@@ -9,6 +9,7 @@ import FileGrid from './components/explorer/FileGrid';
 import FileList from './components/explorer/FileList';
 import SelectionToolbar from './components/layout/SelectionToolbar';
 import AuthModal from './components/common/AuthModal';
+import SetupModal from './components/common/SetupModal';
 import LockoutScreen from './components/common/LockoutScreen';
 import CustomDialog from './components/common/CustomDialog';
 import UploadToast from './components/common/UploadToast';
@@ -21,7 +22,13 @@ import {
 } from './services/api';
 
 function MainLayout() {
-  const { authenticated, isLocked, remainingLockSeconds, loading: authLoading, user } = useAuth();
+  const { authenticated, needsSetup, isLocked, remainingLockSeconds, loading: authLoading, user, serverName } = useAuth();
+
+  useEffect(() => {
+    if (serverName) {
+      document.title = `${serverName} — 내 저장소`;
+    }
+  }, [serverName]);
   const {
     currentPath,
     viewMode,
@@ -198,6 +205,10 @@ function MainLayout() {
 
   if (isLocked) {
     return <LockoutScreen remainingSeconds={remainingLockSeconds} />;
+  }
+
+  if (needsSetup) {
+    return <SetupModal />;
   }
 
   if (!authenticated) {

@@ -5,7 +5,6 @@ import {
   Film,
   Image as ImageIcon,
   FileText,
-  Trash2,
   LogOut,
   PlayCircle
 } from 'lucide-react';
@@ -20,7 +19,7 @@ export default function Sidebar() {
     categoryFilter,
     setCategoryFilter
   } = useExplorer();
-  const { logout, user } = useAuth();
+  const { logout, user, serverName } = useAuth();
 
   const categories = [
     { id: 'all', label: '전체 파일', icon: Files },
@@ -29,15 +28,17 @@ export default function Sidebar() {
     { id: 'document', label: '문서', icon: FileText }
   ];
 
+  const displayName = serverName || '개인 저장소';
+
   return (
     <aside className="flex h-full w-72 flex-col bg-[#16161a] text-[#f4f4f5] px-4 py-5 select-none shrink-0 border-r border-[#232326]">
-      {/* 1. 상단 로고 */}
-      <div className="flex items-center gap-3 px-2 py-1 mb-5">
+      {/* 1. 상단 로고 및 PC 이름 */}
+      <div className="flex items-center gap-3 px-2 py-1 mb-5 min-w-0">
         <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#7F6DF2] text-white shadow-md shrink-0">
           <PlayCircle className="h-6 w-6 fill-white/20" />
         </div>
-        <span className="text-xl font-bold tracking-tight text-white">
-          ReelDrive
+        <span className="text-xl font-bold tracking-tight text-white truncate" title={displayName}>
+          {displayName}
         </span>
       </div>
 
@@ -104,23 +105,9 @@ export default function Sidebar() {
             })}
           </div>
         </div>
-
-        {/* 4. 시스템 섹션 */}
-        <div>
-          <div className="px-3 text-[13px] font-semibold text-[#8e8e93] mb-2 tracking-wide">
-            시스템
-          </div>
-          <button
-            onClick={() => alert('휴지통은 시스템 보호 정책에 따라 관리됩니다.')}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium text-[#d4d4d8] hover:bg-[#232328] hover:text-white transition"
-          >
-            <Trash2 className="h-4 w-4 shrink-0 text-[#a1a1aa]" />
-            <span className="truncate">휴지통</span>
-          </button>
-        </div>
       </div>
 
-      {/* 5. 하단 저장공간 위젯 (표준 폰트 스케일) */}
+      {/* 4. 하단 저장공간 위젯 */}
       {currentDrive && (
         <div className="mt-3.5 rounded-xl border border-[#27272a] bg-[#1c1c20] p-4">
           <div className="flex items-center justify-between text-[14px] text-[#a1a1aa] mb-2 font-medium">
@@ -143,7 +130,7 @@ export default function Sidebar() {
         </div>
       )}
 
-      {/* 6. 사용자 정보 및 로그아웃 */}
+      {/* 5. 사용자 정보 및 로그아웃 */}
       <div className="mt-3.5 border-t border-[#27272a] pt-3.5">
         <div className="flex items-center gap-3 px-1 py-1 mb-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#7F6DF2] text-white font-bold text-sm shrink-0">

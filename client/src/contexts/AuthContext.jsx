@@ -1,10 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { getAuthStatus, login as apiLogin, logout as apiLogout } from '../services/api';
+import { getAuthStatus, login as apiLogin, logout as apiLogout, setupPassword as apiSetupPassword } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [authenticated, setAuthenticated] = useState(false);
+  const [needsSetup, setNeedsSetup] = useState(false);
+  const [serverName, setServerName] = useState('');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -17,6 +19,10 @@ export function AuthProvider({ children }) {
     try {
       const data = await getAuthStatus();
       setAuthenticated(data.authenticated);
+      setNeedsSetup(Boolean(data.needsSetup));
+      if (data.serverName) {
+        setServerName(data.serverName);
+      }
       setUser(data.user);
       if (data.security) {
         setIsLocked(data.security.isLocked);
@@ -56,6 +62,7 @@ export function AuthProvider({ children }) {
     try {
       const result = await apiLogin(password);
       setAuthenticated(true);
+      setNeedsSetup(false);
       setUser(result.user);
       setIsLocked(false);
       setRemainingAttempts(5);
@@ -74,24 +81,38 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const setup = async (password) => {
+    const result = await apiSetupPassword(password);
+    setAuthenticated(true);
+    setNeedsSetup(false);
+    setUser(result.user);
+    setIsLocked(false);
+    setRemainingAttempts(5);
+    return result;
+  };
+
   const logout = async () => {
     try {
       await apiLogout();
     } finally {
       setAuthenticated(false);
       setUser(null);
+      checkAuth();
     }
   };
 
   return (
     <AuthContext.Provider value={{
       authenticated,
+      needsSetup,
+      serverName,
       user,
       loading,
       isLocked,
       remainingLockSeconds,
       remainingAttempts,
       login,
+      setup,
       logout,
       checkAuth
     }}>

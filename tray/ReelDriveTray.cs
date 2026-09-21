@@ -60,6 +60,7 @@ namespace ReelDriveTray
         private const string HealthUrl = "http://127.0.0.1:3001/api/health";
         private const string StartupRegKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
         private const string AppName = "ReelDriveNAS";
+        private static readonly string HostName = Environment.MachineName.Length > 20 ? Environment.MachineName.Substring(0, 20) : Environment.MachineName;
 
         public HiddenMainForm()
         {
@@ -96,7 +97,7 @@ namespace ReelDriveTray
             CheckHealth();
 
             // 시작 안내 풍선 알림
-            _notifyIcon.ShowBalloonTip(3000, "ReelDrive 개인 저장소", "서버가 정상적으로 시작되었습니다.\n트레이 아이콘을 더블클릭하면 웹 저장소가 열립니다.", ToolTipIcon.Info);
+            _notifyIcon.ShowBalloonTip(3000, HostName + " 개인 저장소", "서버가 정상적으로 시작되었습니다.\n트레이 아이콘을 더블클릭하면 웹 저장소가 열립니다.", ToolTipIcon.Info);
         }
 
         protected override void OnLoad(EventArgs e)
@@ -143,7 +144,7 @@ namespace ReelDriveTray
             {
                 Icon = CreateAppIcon(true),
                 ContextMenuStrip = _contextMenu,
-                Text = "ReelDrive 개인 저장소",
+                Text = HostName + " 개인 저장소",
                 Visible = true
             };
 
@@ -250,7 +251,7 @@ namespace ReelDriveTray
             }
             catch (Exception ex)
             {
-                _notifyIcon.ShowBalloonTip(3000, "ReelDrive", "서버 시작 중 오류: " + ex.Message, ToolTipIcon.Warning);
+                _notifyIcon.ShowBalloonTip(3000, HostName, "서버 시작 중 오류: " + ex.Message, ToolTipIcon.Warning);
             }
         }
 
@@ -287,14 +288,14 @@ namespace ReelDriveTray
                 _menuStatus.Text = "● 서비스 중지됨";
                 _menuStatus.ForeColor = Color.Gray;
                 _notifyIcon.Icon = CreateAppIcon(false);
-                _notifyIcon.Text = "ReelDrive 저장소 (중지됨)";
+                _notifyIcon.Text = HostName + " 저장소 (중지됨)";
             }
             catch { }
         }
 
         private void RestartServices()
         {
-            _notifyIcon.ShowBalloonTip(2000, "ReelDrive", "서버를 재시작하는 중입니다...", ToolTipIcon.Info);
+            _notifyIcon.ShowBalloonTip(2000, HostName, "서버를 재시작하는 중입니다...", ToolTipIcon.Info);
             StopServices();
             System.Threading.Thread.Sleep(1000);
             StartServices();
@@ -306,12 +307,12 @@ namespace ReelDriveTray
             if (_isServicesRunning)
             {
                 StopServices();
-                _notifyIcon.ShowBalloonTip(2000, "ReelDrive", "저장소 서버가 중지되었습니다.", ToolTipIcon.Info);
+                _notifyIcon.ShowBalloonTip(2000, HostName, "저장소 서버가 중지되었습니다.", ToolTipIcon.Info);
             }
             else
             {
                 StartServices();
-                _notifyIcon.ShowBalloonTip(2000, "ReelDrive", "저장소 서버가 시작되었습니다.", ToolTipIcon.Info);
+                _notifyIcon.ShowBalloonTip(2000, HostName, "저장소 서버가 시작되었습니다.", ToolTipIcon.Info);
                 CheckHealth();
             }
         }
@@ -331,7 +332,7 @@ namespace ReelDriveTray
                         _isServicesRunning = true;
                         _menuStatus.Text = "● 정상 작동 중";
                         _menuStatus.ForeColor = Color.DarkGreen;
-                        _notifyIcon.Text = "ReelDrive 개인 저장소 (정상 작동 중)";
+                        _notifyIcon.Text = HostName + " 개인 저장소 (정상 작동 중)";
                         _notifyIcon.Icon = CreateAppIcon(true);
                         _menuToggleService.Text = "🛑 서버 일시 중지";
                         return;
@@ -344,13 +345,13 @@ namespace ReelDriveTray
             {
                 _menuStatus.Text = "● 응답 대기 중...";
                 _menuStatus.ForeColor = Color.DarkOrange;
-                _notifyIcon.Text = "ReelDrive 개인 저장소 (연결 중...)";
+                _notifyIcon.Text = HostName + " 개인 저장소 (연결 중...)";
             }
             else
             {
                 _menuStatus.Text = "● 서비스 중지됨";
                 _menuStatus.ForeColor = Color.Gray;
-                _notifyIcon.Text = "ReelDrive 개인 저장소 (중지됨)";
+                _notifyIcon.Text = HostName + " 개인 저장소 (중지됨)";
                 _notifyIcon.Icon = CreateAppIcon(false);
             }
         }
@@ -399,7 +400,7 @@ namespace ReelDriveTray
             }
             catch (Exception ex)
             {
-                MessageBox.Show("브라우저를 열 수 없습니다: " + ex.Message, "ReelDrive", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("브라우저를 열 수 없습니다: " + ex.Message, HostName, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
@@ -443,29 +444,29 @@ namespace ReelDriveTray
                         {
                             key.DeleteValue(AppName, false);
                             _menuAutoStart.Checked = false;
-                            _notifyIcon.ShowBalloonTip(2000, "ReelDrive", "Windows 시작 시 자동 실행이 해제되었습니다.", ToolTipIcon.Info);
+                            _notifyIcon.ShowBalloonTip(2000, HostName, "Windows 시작 시 자동 실행이 해제되었습니다.", ToolTipIcon.Info);
                         }
                         else
                         {
                             string exePath = Application.ExecutablePath;
                             key.SetValue(AppName, "\"" + exePath + "\"");
                             _menuAutoStart.Checked = true;
-                            _notifyIcon.ShowBalloonTip(2000, "ReelDrive", "Windows 시작 시 자동 실행되도록 설정되었습니다.", ToolTipIcon.Info);
+                            _notifyIcon.ShowBalloonTip(2000, HostName, "Windows 시작 시 자동 실행되도록 설정되었습니다.", ToolTipIcon.Info);
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("자동 실행 설정을 변경할 수 없습니다: " + ex.Message, "ReelDrive", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("자동 실행 설정을 변경할 수 없습니다: " + ex.Message, HostName, MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
         }
 
         private void ExitApp()
         {
             var result = MessageBox.Show(
-                "ReelDrive 저장소 트레이 앱을 종료하시겠습니까?\n\n'예'를 누르면 백그라운드 서버도 함께 안전하게 종료됩니다.\n'아니오'를 누르면 서버는 유지하고 트레이만 닫습니다.",
-                "ReelDrive 종료 확인",
+                HostName + " 저장소 트레이 앱을 종료하시겠습니까?\n\n'예'를 누르면 백그라운드 서버도 함께 안전하게 종료됩니다.\n'아니오'를 누르면 서버는 유지하고 트레이만 닫습니다.",
+                HostName + " 종료 확인",
                 MessageBoxButtons.YesNoCancel,
                 MessageBoxIcon.Question);
 
