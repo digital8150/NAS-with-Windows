@@ -10,26 +10,39 @@ import {
   Subtitles
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
+import { getDownloadUrl } from '../../services/api';
 
-function FileIcon({ category, className = 'h-10 w-10' }) {
-  switch (category) {
-    case 'folder':
-      return <Folder className={`${className} text-amber-400 fill-amber-400/20`} />;
-    case 'video':
-      return <Film className={`${className} text-indigo-400`} />;
-    case 'audio':
-      return <Music className={`${className} text-emerald-400`} />;
-    case 'image':
-      return <ImageIcon className={`${className} text-rose-400`} />;
-    case 'document':
-      return <FileText className={`${className} text-sky-400`} />;
-    case 'archive':
-      return <Archive className={`${className} text-orange-400`} />;
-    case 'subtitle':
-      return <Subtitles className={`${className} text-teal-400`} />;
-    default:
-      return <File className={`${className} text-slate-400`} />;
+function FileThumbnail({ item, iconSize = 'h-12 w-12' }) {
+  if (item.category === 'image' && !item.isDirectory) {
+    return (
+      <div className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] overflow-hidden">
+        <img
+          src={getDownloadUrl(item.path)}
+          alt={item.name}
+          loading="lazy"
+          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+        />
+      </div>
+    );
   }
+
+  const iconMapping = {
+    folder: <Folder className={`${iconSize} text-amber-500 fill-amber-500/20`} />,
+    video: <Film className={`${iconSize} text-[#7F6DF2]`} />,
+    audio: <Music className={`${iconSize} text-emerald-500`} />,
+    image: <ImageIcon className={`${iconSize} text-rose-500`} />,
+    document: <FileText className={`${iconSize} text-sky-500`} />,
+    archive: <Archive className={`${iconSize} text-orange-500`} />,
+    subtitle: <Subtitles className={`${iconSize} text-teal-500`} />
+  };
+
+  const icon = iconMapping[item.category] || <File className={`${iconSize} text-[#9B9A97]`} />;
+
+  return (
+    <div className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] border border-[#E9E9E7]/60 group-hover:bg-[#F4F3EF] transition">
+      {icon}
+    </div>
+  );
 }
 
 export default function FileGrid({ onOpenFile }) {
@@ -45,8 +58,8 @@ export default function FileGrid({ onOpenFile }) {
 
   if (loading) {
     return (
-      <div className="flex h-72 items-center justify-center text-slate-400 text-sm">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent mr-3" />
+      <div className="flex h-72 items-center justify-center text-[#73726E] text-sm">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F6DF2] border-t-transparent mr-3" />
         불러오는 중...
       </div>
     );
@@ -54,7 +67,7 @@ export default function FileGrid({ onOpenFile }) {
 
   if (error) {
     return (
-      <div className="flex h-72 items-center justify-center text-red-400 text-sm">
+      <div className="flex h-72 items-center justify-center text-[#E03E3E] text-sm">
         {error}
       </div>
     );
@@ -62,18 +75,17 @@ export default function FileGrid({ onOpenFile }) {
 
   if (items.length === 0) {
     return (
-      <div className="flex h-72 flex-col items-center justify-center text-slate-500 text-sm">
-        <Folder className="h-12 w-12 stroke-1 text-slate-600 mb-3" />
-        <span className="text-base font-medium text-slate-400">폴더가 비어 있습니다.</span>
+      <div className="flex h-72 flex-col items-center justify-center text-[#9B9A97]">
+        <Folder className="h-12 w-12 stroke-1 text-[#C4C4C0] mb-3" />
+        <span className="text-sm font-medium text-[#73726E]">폴더가 비어 있습니다.</span>
       </div>
     );
   }
 
-  // 줌 레벨에 따른 그리드 컬럼 및 아이콘 크기 (기존 프로젝트 기조의 넉넉한 카드)
   const gridClasses = {
     1: 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3',
-    2: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4',
-    3: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5', // 기본 180px~200px
+    2: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-4',
+    3: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5',
     4: 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6',
     5: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6'
   }[zoomLevel] || 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5';
@@ -109,27 +121,25 @@ export default function FileGrid({ onOpenFile }) {
             key={item.path}
             onClick={(e) => handleItemClick(e, item)}
             onDoubleClick={() => handleDoubleClick(item)}
-            className={`group relative flex flex-col rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
+            className={`group relative flex flex-col rounded-2xl border bg-white p-4 transition-all duration-150 cursor-pointer shadow-xs ${
               isSelected
-                ? 'border-indigo-500 bg-indigo-500/10 shadow-md ring-1 ring-indigo-500/50 -translate-y-0.5'
-                : 'border-slate-800 bg-[#0f172a] hover:border-indigo-500/60 hover:shadow-lg hover:-translate-y-1'
+                ? 'border-2 border-[#7F6DF2] shadow-md ring-2 ring-[#7F6DF2]/20'
+                : 'border-[#E9E9E7] hover:border-[#C4C4C0] hover:shadow-md'
             }`}
           >
-            {/* 기존 프로젝트의 시원한 정방형 file-icon 컨테이너 */}
-            <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-slate-900/90 mb-3 border border-slate-800/60 group-hover:bg-slate-900 transition">
-              <FileIcon category={item.category} className={iconSizes} />
-            </div>
+            {/* 스크린샷 1:1 썸네일 영역 */}
+            <FileThumbnail item={item} iconSize={iconSizes} />
 
-            {/* 파일명 (14px 표준 폰트) */}
+            {/* 파일명 (14px font-medium #37352F) */}
             <span
-              className="truncate text-sm font-medium text-slate-100 group-hover:text-white"
+              className="mt-3 truncate text-center text-sm font-medium text-[#37352F] group-hover:text-[#191919]"
               title={item.name}
             >
               {item.name}
             </span>
 
-            {/* 파일 정보 (12px 서브텍스트) */}
-            <span className="mt-1 text-xs text-slate-400 font-mono">
+            {/* 파일 크기 (12px #73726E font-mono) */}
+            <span className="mt-0.5 text-center text-xs text-[#73726E] font-mono">
               {item.isDirectory ? '폴더' : item.sizeFormatted}
             </span>
           </div>

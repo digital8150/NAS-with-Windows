@@ -4,11 +4,12 @@
 
 @layer base {
   body {
-    @apply bg-[#090d16] text-[#f8fafc];
+    @apply bg-[#F7F6F3] text-[#37352F];
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
   }
 }
 
-/* 절제되고 세련된 커스텀 스크롤바 */
+/* 정갈한 커스텀 스크롤바 */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -19,10 +20,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #D3D1CB;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #B4B2AC;
 }

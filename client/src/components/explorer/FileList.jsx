@@ -8,37 +8,37 @@ import {
   Archive,
   File,
   Subtitles,
-  ArrowUpDown,
   ArrowUp,
+  ArrowUpDown,
   ArrowDown
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 
-function FileIcon({ category, className = 'h-5 w-5' }) {
+function FileIcon({ category, className = 'h-4 w-4' }) {
   switch (category) {
     case 'folder':
-      return <Folder className={`${className} text-amber-400 fill-amber-400/20`} />;
+      return <Folder className={`${className} text-amber-500 fill-amber-500/20`} />;
     case 'video':
-      return <Film className={`${className} text-indigo-400`} />;
+      return <Film className={`${className} text-[#7F6DF2]`} />;
     case 'audio':
-      return <Music className={`${className} text-emerald-400`} />;
+      return <Music className={`${className} text-emerald-500`} />;
     case 'image':
-      return <ImageIcon className={`${className} text-rose-400`} />;
+      return <ImageIcon className={`${className} text-rose-500`} />;
     case 'document':
-      return <FileText className={`${className} text-sky-400`} />;
+      return <FileText className={`${className} text-sky-500`} />;
     case 'archive':
-      return <Archive className={`${className} text-orange-400`} />;
+      return <Archive className={`${className} text-orange-500`} />;
     case 'subtitle':
-      return <Subtitles className={`${className} text-teal-400`} />;
+      return <Subtitles className={`${className} text-teal-500`} />;
     default:
-      return <File className={`${className} text-slate-400`} />;
+      return <File className={`${className} text-[#9B9A97]`} />;
   }
 }
 
 function formatDate(isoString) {
   if (!isoString) return '-';
   const d = new Date(isoString);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
 }
 
 export default function FileList({ onOpenFile }) {
@@ -46,9 +46,11 @@ export default function FileList({ onOpenFile }) {
     items,
     loading,
     error,
+    parentPath,
     selectedPaths,
     toggleSelection,
     navigateTo,
+    navigateUp,
     sortBy,
     setSortBy,
     sortOrder,
@@ -57,8 +59,8 @@ export default function FileList({ onOpenFile }) {
 
   if (loading) {
     return (
-      <div className="flex h-72 items-center justify-center text-slate-400 text-sm">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent mr-3" />
+      <div className="flex h-72 items-center justify-center text-[#73726E] text-sm">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F6DF2] border-t-transparent mr-3" />
         불러오는 중...
       </div>
     );
@@ -66,17 +68,8 @@ export default function FileList({ onOpenFile }) {
 
   if (error) {
     return (
-      <div className="flex h-72 items-center justify-center text-red-400 text-sm">
+      <div className="flex h-72 items-center justify-center text-[#E03E3E] text-sm">
         {error}
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="flex h-72 flex-col items-center justify-center text-slate-500 text-sm">
-        <Folder className="h-12 w-12 stroke-1 text-slate-600 mb-3" />
-        <span className="text-base font-medium text-slate-400">폴더가 비어 있습니다.</span>
       </div>
     );
   }
@@ -91,22 +84,22 @@ export default function FileList({ onOpenFile }) {
   };
 
   const renderSortIcon = (field) => {
-    if (sortBy !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-slate-500" />;
+    if (sortBy !== field) return <ArrowUpDown className="h-3.5 w-3.5 text-[#9B9A97]" />;
     return sortOrder === 'asc' ? (
-      <ArrowUp className="h-3.5 w-3.5 text-indigo-400" />
+      <ArrowUp className="h-3.5 w-3.5 text-[#7F6DF2]" />
     ) : (
-      <ArrowDown className="h-3.5 w-3.5 text-indigo-400" />
+      <ArrowDown className="h-3.5 w-3.5 text-[#7F6DF2]" />
     );
   };
 
   return (
-    <div className="w-full overflow-x-auto select-none rounded-xl border border-slate-800 bg-[#0f172a]/70">
-      <table className="w-full text-left text-sm text-slate-200">
-        <thead className="border-b border-slate-800 text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-900/60">
+    <div className="w-full overflow-hidden rounded-2xl border border-[#E9E9E7] bg-white shadow-xs select-none">
+      <table className="w-full text-left text-sm text-[#37352F]">
+        <thead className="border-b border-[#E9E9E7] text-xs font-semibold text-[#73726E] bg-white">
           <tr>
             <th
               onClick={() => handleSort('name')}
-              className="py-3.5 pl-5 pr-4 cursor-pointer hover:text-white transition"
+              className="py-3.5 pl-6 pr-4 cursor-pointer hover:text-[#191919] transition"
             >
               <div className="flex items-center gap-2">
                 <span>이름</span>
@@ -114,27 +107,43 @@ export default function FileList({ onOpenFile }) {
               </div>
             </th>
             <th
-              onClick={() => handleSort('date')}
-              className="py-3.5 px-4 cursor-pointer hover:text-white transition hidden sm:table-cell"
+              onClick={() => handleSort('size')}
+              className="py-3.5 px-6 cursor-pointer hover:text-[#191919] transition w-36 text-left"
             >
               <div className="flex items-center gap-2">
-                <span>수정한 날짜</span>
-                {renderSortIcon('date')}
-              </div>
-            </th>
-            <th className="py-3.5 px-4 hidden md:table-cell">유형</th>
-            <th
-              onClick={() => handleSort('size')}
-              className="py-3.5 pl-4 pr-5 text-right cursor-pointer hover:text-white transition"
-            >
-              <div className="flex items-center justify-end gap-2">
                 <span>크기</span>
                 {renderSortIcon('size')}
               </div>
             </th>
+            <th className="py-3.5 px-6 w-28 hidden md:table-cell">종류</th>
+            <th
+              onClick={() => handleSort('date')}
+              className="py-3.5 pl-6 pr-8 cursor-pointer hover:text-[#191919] transition w-36 hidden sm:table-cell"
+            >
+              <div className="flex items-center gap-2">
+                <span>날짜</span>
+                {renderSortIcon('date')}
+              </div>
+            </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-800/60 font-mono">
+        <tbody className="divide-y divide-[#F1F0EE]">
+          {/* 상위 폴더 바로가기 (스크린샷 1:1) */}
+          {parentPath && (
+            <tr
+              onClick={navigateUp}
+              className="hover:bg-[#F7F6F3] transition cursor-pointer text-[#7F6DF2]"
+            >
+              <td className="py-3 pl-6 pr-4 flex items-center gap-3">
+                <ArrowUp className="h-4 w-4" />
+                <span className="font-semibold text-sm">..</span>
+              </td>
+              <td className="py-3 px-6 text-[#9B9A97] text-xs">-</td>
+              <td className="py-3 px-6 text-[#9B9A97] text-xs hidden md:table-cell">-</td>
+              <td className="py-3 pl-6 pr-8 text-[#9B9A97] text-xs hidden sm:table-cell">-</td>
+            </tr>
+          )}
+
           {items.map((item) => {
             const isSelected = selectedPaths.has(item.path);
 
@@ -148,30 +157,38 @@ export default function FileList({ onOpenFile }) {
                 }}
                 className={`transition cursor-pointer ${
                   isSelected
-                    ? 'bg-indigo-600/15 text-white'
-                    : 'hover:bg-slate-800/50 text-slate-200'
+                    ? 'bg-[#F4F0F8] text-[#191919] font-medium'
+                    : 'hover:bg-[#F7F6F3]'
                 }`}
               >
-                <td className="py-3 pl-5 pr-4">
+                <td className="py-3.5 pl-6 pr-4">
                   <div className="flex items-center gap-3">
-                    <FileIcon category={item.category} className="h-5 w-5 shrink-0" />
-                    <span className="truncate max-w-[280px] sm:max-w-md font-sans text-sm font-medium">
+                    <FileIcon category={item.category} className="h-4 w-4 shrink-0" />
+                    <span className="truncate max-w-[320px] sm:max-w-lg font-medium text-sm text-[#37352F]">
                       {item.name}
                     </span>
                   </div>
                 </td>
-                <td className="py-3 px-4 text-slate-400 text-xs hidden sm:table-cell">
-                  {formatDate(item.mtime)}
-                </td>
-                <td className="py-3 px-4 text-slate-400 text-xs font-sans capitalize hidden md:table-cell">
-                  {item.isDirectory ? '폴더' : item.category}
-                </td>
-                <td className="py-3 pl-4 pr-5 text-right text-slate-300 text-xs font-mono">
+                <td className="py-3.5 px-6 text-[#73726E] text-xs font-mono">
                   {item.isDirectory ? '-' : item.sizeFormatted}
+                </td>
+                <td className="py-3.5 px-6 text-[#73726E] text-xs uppercase hidden md:table-cell font-mono">
+                  {item.isDirectory ? '폴더' : (item.ext ? item.ext.replace('.', '') : '-')}
+                </td>
+                <td className="py-3.5 pl-6 pr-8 text-[#73726E] text-xs hidden sm:table-cell font-mono">
+                  {formatDate(item.mtime)}
                 </td>
               </tr>
             );
           })}
+
+          {items.length === 0 && !parentPath && (
+            <tr>
+              <td colSpan="4" className="py-12 text-center text-sm text-[#9B9A97]">
+                폴더가 비어 있습니다.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

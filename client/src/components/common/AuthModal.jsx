@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, PlayCircle } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function AuthModal() {
@@ -30,14 +30,14 @@ export default function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#090d16] p-4 select-none">
-      <div className="w-full max-w-sm rounded-xl border border-slate-800 bg-[#0f172a] p-8 shadow-2xl">
-        <div className="mb-6 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-800 text-slate-300">
-            <Lock className="h-5 w-5" />
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#F7F6F3] p-4 select-none">
+      <div className="w-full max-w-sm rounded-2xl border border-[#E9E9E7] bg-white p-9 shadow-2xl">
+        <div className="mb-7 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#7F6DF2] text-white shadow-md">
+            <PlayCircle className="h-7 w-7 fill-white/20" />
           </div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-100">저장소 접근</h1>
-          <p className="mt-1 text-xs text-slate-400">비밀번호를 입력하여 연결하세요.</p>
+          <h1 className="text-xl font-bold tracking-tight text-[#191919]">ReelDrive</h1>
+          <p className="mt-1 text-sm text-[#73726E]">저장소 비밀번호를 입력하세요.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -49,12 +49,12 @@ export default function AuthModal() {
               placeholder="비밀번호"
               disabled={isSubmitting}
               autoFocus
-              className="w-full rounded-lg border border-slate-700/80 bg-slate-900/80 px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+              className="w-full rounded-xl border border-[#C4C4C0] bg-white px-4 py-2.5 text-sm text-[#191919] placeholder-[#9B9A97] outline-none transition focus:border-[#7F6DF2] focus:ring-2 focus:ring-[#7F6DF2]/20 disabled:opacity-50"
             />
           </div>
 
           {errorMsg && (
-            <p className="text-xs text-red-400 leading-relaxed text-center font-medium">
+            <p className="text-xs text-[#E03E3E] leading-relaxed text-center font-medium">
               {errorMsg}
             </p>
           )}
@@ -62,7 +62,7 @@ export default function AuthModal() {
           <button
             type="submit"
             disabled={!password.trim() || isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7F6DF2] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#6855dd] focus:outline-none focus:ring-2 focus:ring-[#7F6DF2]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

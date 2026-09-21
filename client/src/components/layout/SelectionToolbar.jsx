@@ -21,17 +21,17 @@ export default function SelectionToolbar({ onRename, onDelete }) {
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-xl border border-slate-700 bg-[#0f172a] px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 select-none">
-      <span className="text-sm font-semibold text-slate-200 pr-3 border-r border-slate-800">
+    <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-2xl border border-[#E9E9E7] bg-white px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 select-none text-sm font-medium">
+      <span className="font-semibold text-[#191919] pr-3 border-r border-[#E9E9E7]">
         {count}개 선택됨
       </span>
 
       {isSingle && singleItem && !singleItem.isDirectory && (
         <button
           onClick={handleDownload}
-          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:bg-slate-800 hover:text-white"
+          className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-[#37352F] transition hover:bg-[#F7F6F3] hover:text-[#7F6DF2]"
         >
-          <Download className="h-4 w-4 text-slate-400" />
+          <Download className="h-4 w-4 text-[#73726E]" />
           <span>다운로드</span>
         </button>
       )}
@@ -39,16 +39,16 @@ export default function SelectionToolbar({ onRename, onDelete }) {
       {isSingle && (
         <button
           onClick={() => onRename(singlePath)}
-          className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:bg-slate-800 hover:text-white"
+          className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-[#37352F] transition hover:bg-[#F7F6F3] hover:text-[#7F6DF2]"
         >
-          <Edit3 className="h-4 w-4 text-slate-400" />
+          <Edit3 className="h-4 w-4 text-[#73726E]" />
           <span>이름 변경</span>
         </button>
       )}
 
       <button
         onClick={() => onDelete(selectedList)}
-        className="flex items-center gap-2 rounded-lg px-3 py-1.5 text-sm font-medium text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
+        className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-[#E03E3E] transition hover:bg-red-50 hover:text-red-600"
       >
         <Trash2 className="h-4 w-4" />
         <span>삭제</span>
@@ -56,7 +56,7 @@ export default function SelectionToolbar({ onRename, onDelete }) {
 
       <button
         onClick={clearSelection}
-        className="ml-1 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        className="ml-1 rounded-xl p-1.5 text-[#9B9A97] transition hover:bg-[#F7F6F3] hover:text-[#191919]"
         title="선택 해제"
       >
         <X className="h-4 w-4" />

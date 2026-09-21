@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ExplorerProvider, useExplorer } from './contexts/ExplorerContext';
 import Sidebar from './components/layout/Sidebar';
@@ -20,7 +20,7 @@ import {
 } from './services/api';
 
 function MainLayout() {
-  const { authenticated, isLocked, remainingLockSeconds, loading: authLoading } = useAuth();
+  const { authenticated, isLocked, remainingLockSeconds, loading: authLoading, user } = useAuth();
   const {
     currentPath,
     viewMode,
@@ -51,6 +51,10 @@ function MainLayout() {
 
   // 드래그 앤 드롭 상태
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+  // 통계 계산 (하단 상태바용)
+  const folderCount = useMemo(() => items.filter(i => i.isDirectory).length, [items]);
+  const fileCount = useMemo(() => items.filter(i => !i.isDirectory).length, [items]);
 
   // 새 폴더 모달 열기
   const handleOpenNewFolder = () => {
@@ -181,9 +185,9 @@ function MainLayout() {
 
   if (authLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#090d16] text-slate-400 text-sm">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent mr-2.5" />
-        불러오는 중...
+      <div className="flex h-screen w-screen items-center justify-center bg-[#F7F6F3] text-[#73726E] text-sm font-medium">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F6DF2] border-t-transparent mr-3" />
+        저장소에 연결하는 중...
       </div>
     );
   }
@@ -201,40 +205,51 @@ function MainLayout() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="relative flex h-screen w-screen overflow-hidden bg-[#0b0f19] text-[#f1f5f9]"
+      className="relative flex h-screen w-screen overflow-hidden bg-[#F7F6F3] text-[#37352F]"
     >
-      {/* 사이드바 */}
+      {/* 사이드바 (다크 톤) */}
       <Sidebar />
 
-      {/* 메인 탐색 영역 */}
+      {/* 메인 탐색 영역 (웜 크림/화이트 톤) */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* 상단 헤더 */}
+        {/* 상단 화이트 헤더 */}
         <Header
           onNewFolder={handleOpenNewFolder}
           onUploadFiles={handleUploadFiles}
         />
 
-        {/* 경로 및 드라이브 서브헤더 */}
-        <div className="border-b border-slate-800 bg-[#0d1424]/70 px-6 py-3.5 space-y-3">
+        {/* 경로 및 드라이브 내비게이션 바 */}
+        <div className="px-7 pt-4 pb-2 space-y-2.5">
           <DriveSelector />
           <Breadcrumb />
         </div>
 
         {/* 메인 파일 뷰 */}
-        <main className="flex-1 overflow-y-auto p-6 scrollbar-thin">
+        <main className="flex-1 overflow-y-auto px-7 pb-6 scrollbar-thin">
           {viewMode === 'grid' ? (
             <FileGrid onOpenFile={(item) => console.log('Open:', item)} />
           ) : (
             <FileList onOpenFile={(item) => console.log('Open:', item)} />
           )}
         </main>
+
+        {/* 하단 상태 표시줄 (스크린샷 1:1) */}
+        <footer className="flex h-7 w-full items-center justify-between border-t border-[#E9E9E7] bg-white px-6 text-xs text-[#73726E] select-none shrink-0 font-mono">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="font-sans">연결됨 · {user?.role || 'admin'}</span>
+          </div>
+          <div>
+            <span>{folderCount}개 폴더, {fileCount}개 파일</span>
+          </div>
+        </footer>
       </div>
 
       {/* 드래그 앤 드롭 오버레이 */}
       {isDraggingOver && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-blue-950/40 backdrop-blur-sm border-2 border-dashed border-blue-500 pointer-events-none select-none">
-          <div className="rounded-xl border border-slate-700 bg-[#0f172a] px-6 py-4 text-center shadow-xl">
-            <span className="text-sm font-semibold text-slate-100">
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#7F6DF2]/10 backdrop-blur-xs border-2 border-dashed border-[#7F6DF2] pointer-events-none select-none">
+          <div className="rounded-2xl border border-[#E9E9E7] bg-white px-8 py-5 text-center shadow-xl">
+            <span className="text-base font-semibold text-[#191919]">
               업로드할 파일을 여기에 놓으세요
             </span>
           </div>

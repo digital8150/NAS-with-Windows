@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, ArrowUp, Home } from 'lucide-react';
+import { ChevronRight, Home, ArrowUp } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 
 export default function Breadcrumb() {
@@ -18,41 +18,35 @@ export default function Breadcrumb() {
   };
 
   return (
-    <nav className="flex items-center gap-2 text-sm text-slate-400 select-none overflow-x-auto py-1 scrollbar-none">
+    <nav className="flex items-center gap-2 text-sm text-[#73726E] select-none overflow-x-auto py-1 scrollbar-none">
       <button
         onClick={navigateUp}
         disabled={!parentPath}
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-800 bg-slate-900/80 text-slate-300 transition hover:bg-slate-800 hover:text-white disabled:opacity-30 disabled:hover:bg-slate-900/80"
-        title="상위 폴더로 이동"
+        className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E9E9E7] bg-white text-[#73726E] hover:bg-[#F7F6F3] hover:text-[#37352F] transition disabled:opacity-30 disabled:hover:bg-white mr-1"
+        title="상위 폴더"
       >
-        <ArrowUp className="h-4 w-4" />
+        <ArrowUp className="h-3.5 w-3.5" />
       </button>
 
-      <div className="flex items-center gap-1.5 font-medium">
+      <div className="flex items-center gap-2 font-medium">
         {segments.map((segment, idx) => {
           const isLast = idx === segments.length - 1;
           const targetPath = buildPathUpTo(idx);
 
           return (
             <React.Fragment key={targetPath}>
-              {idx > 0 && <ChevronRight className="h-4 w-4 text-slate-600 shrink-0" />}
+              {idx > 0 && <ChevronRight className="h-4 w-4 text-[#9B9A97] shrink-0" />}
               <button
                 onClick={() => !isLast && navigateTo(targetPath)}
                 disabled={isLast}
-                className={`rounded-md px-2 py-1 transition shrink-0 ${
+                className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 transition shrink-0 ${
                   isLast
-                    ? 'text-slate-100 font-semibold cursor-default'
-                    : 'text-slate-400 hover:bg-slate-800/80 hover:text-indigo-400'
+                    ? 'text-[#191919] font-bold cursor-default'
+                    : 'text-[#73726E] hover:text-[#7F6DF2]'
                 }`}
               >
-                {idx === 0 ? (
-                  <span className="flex items-center gap-1.5">
-                    <Home className="h-3.5 w-3.5 text-slate-400" />
-                    <span>{segment}</span>
-                  </span>
-                ) : (
-                  segment
-                )}
+                {idx === 0 && <Home className="h-4 w-4 text-[#9B9A97]" />}
+                <span>{idx === 0 ? '홈' : segment}</span>
               </button>
             </React.Fragment>
           );

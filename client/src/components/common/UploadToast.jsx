@@ -18,16 +18,16 @@ export default function UploadToast({ uploadState, onCancel }) {
   const speedStr = formatSpeed(speedBps);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-80 rounded-xl border border-slate-800 bg-[#0f172a] p-4 shadow-2xl transition-all duration-200">
+    <div className="fixed bottom-12 right-6 z-50 w-80 rounded-2xl border border-[#E9E9E7] bg-white p-4 shadow-2xl transition-all duration-200">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-slate-200 text-sm font-medium">
-          <UploadCloud className="h-4 w-4 text-blue-400" />
+        <div className="flex items-center gap-2.5 text-[#191919] text-sm font-semibold">
+          <UploadCloud className="h-4 w-4 text-[#7F6DF2]" />
           <span>{fileCount}개 파일 업로드 중</span>
         </div>
         {onCancel && (
           <button
             onClick={onCancel}
-            className="text-slate-400 hover:text-slate-200 transition"
+            className="text-[#9B9A97] hover:text-[#191919] transition"
             title="취소"
           >
             <X className="h-4 w-4" />
@@ -36,16 +36,16 @@ export default function UploadToast({ uploadState, onCancel }) {
       </div>
 
       <div className="mt-3">
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#E9E9E7]">
           <div
-            className="h-full bg-blue-500 transition-all duration-150 ease-out"
+            className="h-full bg-[#7F6DF2] transition-all duration-150 ease-out"
             style={{ width: `${percent}%` }}
           />
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between text-xs text-slate-400">
-        <span>{percent}%</span>
+      <div className="mt-2.5 flex items-center justify-between text-xs text-[#73726E]">
+        <span className="font-semibold">{percent}%</span>
         {speedStr && <span className="font-mono">{speedStr}</span>}
       </div>
     </div>
