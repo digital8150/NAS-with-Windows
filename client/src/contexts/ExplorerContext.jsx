@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { getDrives, getFiles } from '../services/api';
 import { useAuth } from './AuthContext';
 
@@ -6,10 +7,11 @@ const ExplorerContext = createContext(null);
 
 export function ExplorerProvider({ children }) {
   const { authenticated } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [drives, setDrives] = useState([]);
   const [currentDrive, setCurrentDrive] = useState(null);
-  const [currentPath, setCurrentPath] = useState('');
+  const [currentPath, setCurrentPath] = useState(() => searchParams.get('path') || '');
   const [parentPath, setParentPath] = useState(null);
   
   const [items, setItems] = useState([]);
@@ -19,7 +21,7 @@ export function ExplorerProvider({ children }) {
   // 뷰 및 필터 상태
   const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   const [zoomLevel, setZoomLevel] = useState(3); // 1 (작게) ~ 5 (크게)
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [categoryFilter, setCategoryFilterState] = useState(() => searchParams.get('category') || 'all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'date' | 'size'
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
@@ -27,27 +29,72 @@ export function ExplorerProvider({ children }) {
   // 선택 상태
   const [selectedPaths, setSelectedPaths] = useState(new Set());
 
+  // URL 파라미터로 카테고리 필터 동기화
+  const setCategoryFilter = useCallback((cat) => {
+    setCategoryFilterState(cat);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (cat && cat !== 'all') {
+        next.set('category', cat);
+      } else {
+        next.delete('category');
+      }
+      return next;
+    });
+  }, [setSearchParams]);
+
   // 드라이브 목록 로드
   const loadDrives = useCallback(async (forceRefresh = false) => {
     if (!authenticated) return;
     try {
       const data = await getDrives(forceRefresh);
-      setDrives(data.drives || []);
+      const loadedDrives = data.drives || [];
+      setDrives(loadedDrives);
       
-      // 최초 실행 시 첫 번째 드라이브 선택
-      if (!currentDrive && data.drives && data.drives.length > 0) {
-        const initial = data.drives[0];
+      const paramPath = searchParams.get('path');
+      if (paramPath) {
+        // URL에 지정된 경로가 있을 때 매칭되는 드라이브 설정
+        const driveLetter = paramPath.charAt(0).toUpperCase();
+        const matched = loadedDrives.find(d => d.id === driveLetter);
+        if (matched) setCurrentDrive(matched);
+        setCurrentPath(paramPath);
+      } else if (!currentDrive && loadedDrives.length > 0) {
+        // 기본값: 첫 번째 드라이브
+        const initial = loadedDrives[0];
         setCurrentDrive(initial);
         setCurrentPath(initial.mountPoint);
+        setSearchParams((prev) => {
+          const next = new URLSearchParams(prev);
+          next.set('path', initial.mountPoint);
+          return next;
+        }, { replace: true });
       }
     } catch (err) {
       console.error('드라이브 로드 실패:', err);
     }
-  }, [authenticated, currentDrive]);
+  }, [authenticated, currentDrive, searchParams, setSearchParams]);
 
   useEffect(() => {
     loadDrives();
   }, [loadDrives]);
+
+  // 브라우저 뒤로가기 / 앞으로가기 발생 시 URL 변경 감지 및 동기화
+  useEffect(() => {
+    const urlPath = searchParams.get('path');
+    if (urlPath && urlPath !== currentPath) {
+      setCurrentPath(urlPath);
+      const driveLetter = urlPath.charAt(0).toUpperCase();
+      const matched = drives.find(d => d.id === driveLetter);
+      if (matched && (!currentDrive || currentDrive.id !== driveLetter)) {
+        setCurrentDrive(matched);
+      }
+    }
+
+    const urlCategory = searchParams.get('category') || 'all';
+    if (urlCategory !== categoryFilter) {
+      setCategoryFilterState(urlCategory);
+    }
+  }, [searchParams, currentPath, currentDrive, drives, categoryFilter]);
 
   // 디렉토리 파일 목록 로드
   const loadFiles = useCallback(async (targetPath) => {
@@ -75,11 +122,16 @@ export function ExplorerProvider({ children }) {
     }
   }, [currentPath, loadFiles]);
 
-  // 경로 이동
+  // 경로 이동 (URL 변경 동기화 -> 브라우저 히스토리에 기록)
   const navigateTo = useCallback((targetPath) => {
     if (!targetPath) return;
     setCurrentPath(targetPath);
-  }, []);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('path', targetPath);
+      return next;
+    });
+  }, [setSearchParams]);
 
   // 상위 폴더로 이동
   const navigateUp = useCallback(() => {

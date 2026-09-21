@@ -13,6 +13,7 @@ import VideoPlayer from './VideoPlayer';
 import ImageViewer from './ImageViewer';
 import AudioPlayerCard from './AudioPlayerCard';
 import DocumentViewer from './DocumentViewer';
+import ErrorBoundary from '../common/ErrorBoundary';
 import { getDownloadUrl } from '../../services/api';
 
 function CategoryIcon({ category, className = 'h-5 w-5' }) {
@@ -145,7 +146,9 @@ export default function PreviewModal({ item, allItems = [], onClose, onSelectIte
         onClick={(e) => e.stopPropagation()}
         className="flex-1 flex items-center justify-center w-full max-w-6xl mx-auto overflow-hidden"
       >
-        {renderContent()}
+        <ErrorBoundary onReset={onClose}>
+          {renderContent()}
+        </ErrorBoundary>
       </div>
     </div>
   );
