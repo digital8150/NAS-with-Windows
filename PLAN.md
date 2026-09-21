@@ -286,11 +286,12 @@ client/src/
   - Git 초기화 및 `.gitignore` 작성
   - 기존 리포지터리 2건(`web-drive-project`, `webprogramming-mydrive`) 소스 분석 및 핵심 기술 파악
   - 시스템 설계 및 세부 기획서(`PLAN.md`, `README.md`) 작성 및 커밋
-- [ ] **Phase 1: 백엔드 코어 & 보안 엔진 구축**
+- [x] **Phase 1: 백엔드 코어 & 보안 엔진 구축 (완료)**
   - Express 서버 구조 설정 (`server/`)
-  - Windows 드라이브 자동 감지 서비스 (`drives.js`)
-  - 시스템 파일 제외 및 Path Traversal 방어 미들웨어 (`pathSecurity.js`)
-  - 브루트포스 차단(Rate Limit + 15분 Lockout) & HttpOnly 인증 (`auth.js`)
+  - Windows 드라이브 자동 감지 서비스 (`driveService.js`, `drives.js`)
+  - 시스템 파일 제외 및 Path Traversal 방어 미들웨어 (`pathSecurity.js`, `security.js`)
+  - 브루트포스 차단(Rate Limit + 15분 Lockout) & HttpOnly 인증 (`rateLimiter.js`, `auth.js`)
+  - 단위 및 E2E API 통합 테스트 스위트 검증 통과 (`phase1-test.js`, `api-test.js`)
 - [ ] **Phase 2: 파일 관리 & 스트리밍 엔진 이식**
   - 파일 브라우징 / 업로드 / 다운로드 / 수정 / 삭제 API
   - FFmpeg 실시간 리먹싱, 206 Range 스트리밍, ffprobe 분석
