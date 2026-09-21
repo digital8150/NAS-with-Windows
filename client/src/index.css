@@ -24,7 +24,7 @@
   }
 }
 
-/* 정갈한 커스텀 스크롤바 */
+/* 정갈한 커스텀 스크롤바 (메인 캔버스용) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -41,4 +41,37 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #B4B2AC;
+}
+
+/* 다크 사이드바 전용 은은한 스크롤바 */
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 9999px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #3f3f46;
+}
+
+.sidebar-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a transparent;
+}
+
+/* 스크롤바 숨김 유틸리티 */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

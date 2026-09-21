@@ -22,14 +22,17 @@ export default function DriveSelector() {
                 : 'border-[#E9E9E7] bg-white hover:border-[#C4C4C0] hover:bg-[#FAF9F7]'
             }`}
           >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between gap-2 w-full min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
                 <HardDrive
-                  className={`h-4 w-4 ${
+                  className={`h-4 w-4 shrink-0 ${
                     isSelected ? 'text-[#7F6DF2]' : 'text-[#73726E] group-hover:text-[#37352F]'
                   }`}
                 />
-                <span className={`text-sm font-semibold ${isSelected ? 'text-[#7F6DF2]' : 'text-[#37352F]'}`}>
+                <span
+                  className={`text-sm font-semibold truncate ${isSelected ? 'text-[#7F6DF2]' : 'text-[#37352F]'}`}
+                  title={`${drive.id}: ${drive.label ? `(${drive.label})` : ''}`}
+                >
                   {drive.id}: {drive.label ? `(${drive.label})` : ''}
                 </span>
               </div>
