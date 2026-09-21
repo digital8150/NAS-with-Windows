@@ -201,7 +201,7 @@ function MainLayout() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="relative flex h-screen w-screen overflow-hidden bg-[#090d16] text-[#f8fafc]"
+      className="relative flex h-screen w-screen overflow-hidden bg-[#0b0f19] text-[#f1f5f9]"
     >
       {/* 사이드바 */}
       <Sidebar />
@@ -215,13 +215,13 @@ function MainLayout() {
         />
 
         {/* 경로 및 드라이브 서브헤더 */}
-        <div className="border-b border-slate-800/80 bg-[#0c111d]/50 px-5 py-2.5 space-y-2.5">
+        <div className="border-b border-slate-800 bg-[#0d1424]/70 px-6 py-3.5 space-y-3">
           <DriveSelector />
           <Breadcrumb />
         </div>
 
         {/* 메인 파일 뷰 */}
-        <main className="flex-1 overflow-y-auto p-5 scrollbar-thin">
+        <main className="flex-1 overflow-y-auto p-6 scrollbar-thin">
           {viewMode === 'grid' ? (
             <FileGrid onOpenFile={(item) => console.log('Open:', item)} />
           ) : (

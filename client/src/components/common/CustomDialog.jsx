@@ -66,7 +66,7 @@ export default function CustomDialog({
               className={`rounded-lg px-4 py-2 text-sm font-medium text-white transition focus:outline-none disabled:opacity-50 ${
                 isDanger
                   ? 'bg-red-600 hover:bg-red-500 focus:ring-2 focus:ring-red-500/40'
-                  : 'bg-blue-600 hover:bg-blue-500 focus:ring-2 focus:ring-blue-500/40'
+                  : 'bg-indigo-600 hover:bg-indigo-500 focus:ring-2 focus:ring-indigo-500/40'
               }`}
             >
               {confirmText}

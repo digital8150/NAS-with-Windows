@@ -11,10 +11,10 @@ import {
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 
-function FileIcon({ category, className = 'h-8 w-8' }) {
+function FileIcon({ category, className = 'h-10 w-10' }) {
   switch (category) {
     case 'folder':
-      return <Folder className={`${className} text-amber-400 fill-amber-400/10`} />;
+      return <Folder className={`${className} text-amber-400 fill-amber-400/20`} />;
     case 'video':
       return <Film className={`${className} text-indigo-400`} />;
     case 'audio':
@@ -45,8 +45,8 @@ export default function FileGrid({ onOpenFile }) {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center text-slate-500 text-sm">
-        <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-transparent mr-2" />
+      <div className="flex h-72 items-center justify-center text-slate-400 text-sm">
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent mr-3" />
         불러오는 중...
       </div>
     );
@@ -54,7 +54,7 @@ export default function FileGrid({ onOpenFile }) {
 
   if (error) {
     return (
-      <div className="flex h-64 items-center justify-center text-red-400 text-sm">
+      <div className="flex h-72 items-center justify-center text-red-400 text-sm">
         {error}
       </div>
     );
@@ -62,29 +62,29 @@ export default function FileGrid({ onOpenFile }) {
 
   if (items.length === 0) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center text-slate-500 text-sm">
-        <Folder className="h-10 w-10 stroke-1 text-slate-600 mb-2" />
-        <span>폴더가 비어 있습니다.</span>
+      <div className="flex h-72 flex-col items-center justify-center text-slate-500 text-sm">
+        <Folder className="h-12 w-12 stroke-1 text-slate-600 mb-3" />
+        <span className="text-base font-medium text-slate-400">폴더가 비어 있습니다.</span>
       </div>
     );
   }
 
-  // 줌 레벨에 따른 그리드 클래스
+  // 줌 레벨에 따른 그리드 컬럼 및 아이콘 크기 (기존 프로젝트 기조의 넉넉한 카드)
   const gridClasses = {
-    1: 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2',
-    2: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2.5',
-    3: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3',
-    4: 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4',
-    5: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5'
-  }[zoomLevel] || 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3';
+    1: 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3',
+    2: 'grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-4',
+    3: 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5', // 기본 180px~200px
+    4: 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6',
+    5: 'grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6'
+  }[zoomLevel] || 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5';
 
   const iconSizes = {
-    1: 'h-6 w-6',
-    2: 'h-8 w-8',
-    3: 'h-10 w-10',
-    4: 'h-14 w-14',
-    5: 'h-16 w-16'
-  }[zoomLevel] || 'h-10 w-10';
+    1: 'h-8 w-8',
+    2: 'h-10 w-10',
+    3: 'h-12 w-12',
+    4: 'h-16 w-16',
+    5: 'h-20 w-20'
+  }[zoomLevel] || 'h-12 w-12';
 
   const handleItemClick = (e, item) => {
     const isMulti = e.ctrlKey || e.metaKey || e.shiftKey;
@@ -100,7 +100,7 @@ export default function FileGrid({ onOpenFile }) {
   };
 
   return (
-    <div className={`grid ${gridClasses} select-none p-1`}>
+    <div className={`grid ${gridClasses} select-none`}>
       {items.map((item) => {
         const isSelected = selectedPaths.has(item.path);
 
@@ -109,24 +109,27 @@ export default function FileGrid({ onOpenFile }) {
             key={item.path}
             onClick={(e) => handleItemClick(e, item)}
             onDoubleClick={() => handleDoubleClick(item)}
-            className={`group relative flex flex-col items-center justify-center rounded-xl border p-3.5 text-center transition cursor-pointer ${
+            className={`group relative flex flex-col rounded-xl border p-4 transition-all duration-200 cursor-pointer ${
               isSelected
-                ? 'border-blue-500 bg-blue-500/10 shadow-sm'
-                : 'border-slate-800/80 bg-[#0f172a]/60 hover:border-slate-700 hover:bg-[#0f172a]'
+                ? 'border-indigo-500 bg-indigo-500/10 shadow-md ring-1 ring-indigo-500/50 -translate-y-0.5'
+                : 'border-slate-800 bg-[#0f172a] hover:border-indigo-500/60 hover:shadow-lg hover:-translate-y-1'
             }`}
           >
-            <div className="flex items-center justify-center my-2">
+            {/* 기존 프로젝트의 시원한 정방형 file-icon 컨테이너 */}
+            <div className="w-full aspect-square flex items-center justify-center rounded-lg bg-slate-900/90 mb-3 border border-slate-800/60 group-hover:bg-slate-900 transition">
               <FileIcon category={item.category} className={iconSizes} />
             </div>
 
+            {/* 파일명 (14px 표준 폰트) */}
             <span
-              className="mt-1 w-full truncate text-xs font-medium text-slate-200 group-hover:text-white"
+              className="truncate text-sm font-medium text-slate-100 group-hover:text-white"
               title={item.name}
             >
               {item.name}
             </span>
 
-            <span className="mt-0.5 text-[11px] text-slate-500 font-mono">
+            {/* 파일 정보 (12px 서브텍스트) */}
+            <span className="mt-1 text-xs text-slate-400 font-mono">
               {item.isDirectory ? '폴더' : item.sizeFormatted}
             </span>
           </div>

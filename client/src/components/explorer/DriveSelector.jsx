@@ -8,7 +8,7 @@ export default function DriveSelector() {
   if (!drives || drives.length === 0) return null;
 
   return (
-    <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+    <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-none">
       {drives.map((drive) => {
         const isSelected = currentDrive?.id === drive.id;
 
@@ -16,33 +16,33 @@ export default function DriveSelector() {
           <button
             key={drive.id}
             onClick={() => selectDrive(drive)}
-            className={`group relative flex min-w-[140px] flex-col rounded-lg border p-2.5 text-left transition ${
+            className={`group relative flex min-w-[160px] flex-col rounded-xl border p-3 text-left transition ${
               isSelected
-                ? 'border-blue-500/60 bg-blue-500/5'
-                : 'border-slate-800/80 bg-slate-900/40 hover:border-slate-700 hover:bg-slate-900/80'
+                ? 'border-indigo-500 bg-indigo-500/10 shadow-sm'
+                : 'border-slate-800 bg-[#0f172a]/70 hover:border-slate-700 hover:bg-[#0f172a]'
             }`}
           >
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <HardDrive
                   className={`h-4 w-4 ${
-                    isSelected ? 'text-blue-400' : 'text-slate-400 group-hover:text-slate-300'
+                    isSelected ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-300'
                   }`}
                 />
-                <span className="text-xs font-semibold text-slate-200">
-                  {drive.id}: {drive.label && `(${drive.label})`}
+                <span className="text-sm font-semibold text-slate-100">
+                  {drive.id}: {drive.label ? `(${drive.label})` : ''}
                 </span>
               </div>
             </div>
 
             <div className="mt-2.5">
-              <div className="h-1 w-full overflow-hidden rounded-full bg-slate-800">
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-800">
                 <div
                   className={`h-full transition-all duration-300 ${
                     drive.usedPercentage > 90
                       ? 'bg-amber-500'
                       : isSelected
-                      ? 'bg-blue-500'
+                      ? 'bg-indigo-500'
                       : 'bg-slate-500'
                   }`}
                   style={{ width: `${Math.min(100, drive.usedPercentage)}%` }}
@@ -50,7 +50,7 @@ export default function DriveSelector() {
               </div>
             </div>
 
-            <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-400 font-mono">
               <span>{drive.freeFormatted} 남음</span>
               <span>{drive.totalFormatted}</span>
             </div>
