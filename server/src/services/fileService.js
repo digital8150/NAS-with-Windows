@@ -74,9 +74,23 @@ async function listDirectory(targetPath) {
     try {
         stat = await fs.promises.stat(safePath);
     } catch (e) {
-        const err = new Error(e.code === 'ENOENT' ? '폴더를 찾을 수 없습니다.' : '접근할 수 없는 폴더입니다.');
-        err.statusCode = e.code === 'ENOENT' ? 404 : 403;
-        throw err;
+        if (e.code === 'ENOENT') {
+            const err = new Error('폴더를 찾을 수 없습니다.');
+            err.statusCode = 404;
+            throw err;
+        } else if (e.code === 'UNKNOWN' || e.code === 'ENODEV' || e.code === 'EBUSY') {
+            const err = new Error('장치가 준비되지 않았거나 미디어가 없습니다.');
+            err.statusCode = 404;
+            throw err;
+        } else if (e.code === 'EACCES' || e.code === 'EPERM') {
+            const err = new Error('접근 권한이 없는 폴더입니다.');
+            err.statusCode = 403;
+            throw err;
+        } else {
+            const err = new Error('접근할 수 없는 폴더입니다.');
+            err.statusCode = 500;
+            throw err;
+        }
     }
 
     if (!stat.isDirectory()) {
@@ -94,9 +108,19 @@ async function listDirectory(targetPath) {
     try {
         entries = await fs.promises.readdir(safePath, { withFileTypes: true });
     } catch (e) {
-        const err = new Error('접근 권한이 없거나 보호된 시스템 폴더입니다.');
-        err.statusCode = (e.code === 'EACCES' || e.code === 'EPERM') ? 403 : 500;
-        throw err;
+        if (e.code === 'ENOENT') {
+            const err = new Error('폴더를 찾을 수 없습니다.');
+            err.statusCode = 404;
+            throw err;
+        } else if (e.code === 'EACCES' || e.code === 'EPERM') {
+            const err = new Error('접근 권한이 없거나 보호된 시스템 폴더입니다.');
+            err.statusCode = 403;
+            throw err;
+        } else {
+            const err = new Error('폴더 내용을 읽을 수 없습니다.');
+            err.statusCode = 500;
+            throw err;
+        }
     }
     const items = [];
 

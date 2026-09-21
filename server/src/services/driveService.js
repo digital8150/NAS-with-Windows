@@ -38,11 +38,12 @@ function formatBytes(bytes, decimals = 1) {
  */
 function scanDrivesViaPowerShell() {
     return new Promise((resolve, reject) => {
-        const psCommand = 'Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID, VolumeName, FileSystem, Size, FreeSpace, DriveType | ConvertTo-Json -Compress';
+        const psCommand = '[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; Get-CimInstance Win32_LogicalDisk | Select-Object DeviceID, VolumeName, FileSystem, Size, FreeSpace, DriveType | ConvertTo-Json -Compress';
         
         execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', psCommand], {
             timeout: 5000,
-            windowsHide: true
+            windowsHide: true,
+            encoding: 'utf8'
         }, (error, stdout, stderr) => {
             if (error) {
                 return reject(error);
@@ -121,7 +122,22 @@ async function getMountedDrives(forceRefresh = false) {
     }
 
     const drives = rawList
-        .filter(item => item && item.DeviceID)
+        .filter(item => {
+            if (!item || !item.DeviceID) return false;
+            const letter = item.DeviceID.replace(':', '').toUpperCase();
+            const mountPoint = `${letter}:\\`;
+
+            // 미디어가 없거나 파일시스템이 마운트되지 않은 드라이브(빈 CD-ROM, 빈 SD 카드 슬롯 등) 제외
+            try {
+                if (!fs.existsSync(mountPoint)) {
+                    return false;
+                }
+            } catch {
+                return false;
+            }
+
+            return true;
+        })
         .map(item => {
             const letter = item.DeviceID.replace(':', '').toUpperCase();
             const mountPoint = `${letter}:\\`;
@@ -135,10 +151,10 @@ async function getMountedDrives(forceRefresh = false) {
                 id: letter,
                 letter,
                 mountPoint,
-                label: item.VolumeName || (letter === 'C' ? 'Local Disk' : 'New Volume'),
+                label: item.VolumeName || (letter === 'C' ? '로컬 디스크' : `새 볼륨 (${letter}:)`),
                 fileSystem: item.FileSystem || 'NTFS',
                 driveType: driveTypeNum,
-                driveTypeDesc: DRIVE_TYPE_MAP[driveTypeNum] || 'Unknown',
+                driveTypeDesc: DRIVE_TYPE_MAP[driveTypeNum] || '기본 저장소',
                 totalBytes,
                 freeBytes,
                 usedBytes,
