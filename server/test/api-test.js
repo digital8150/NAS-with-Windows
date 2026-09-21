@@ -1,4 +1,5 @@
 const assert = require('assert');
+const config = require('../src/config');
 const { app } = require('../src/index');
 
 let serverInstance;
@@ -58,7 +59,7 @@ async function runApiIntegrationTests() {
         const resLogin = await fetch(`${BASE_URL}/api/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: 'admin1234' })
+            body: JSON.stringify({ password: config.MASTER_PASSWORD })
         });
         assert.strictEqual(resLogin.status, 200);
         const dataLogin = await resLogin.json();
