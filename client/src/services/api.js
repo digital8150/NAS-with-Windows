@@ -138,6 +138,32 @@ export function getViewStreamUrl(filePath, audioIndex = null, start = 0, forceRe
   return url;
 }
 
+export function getPreviewImageUrl(filePath) {
+  return `${BASE_URL}/api/media/preview-image?path=${encodeURIComponent(filePath)}`;
+}
+
+export function getPdfViewUrl(filePath) {
+  return `${BASE_URL}/api/media/view-pdf?path=${encodeURIComponent(filePath)}`;
+}
+
+export async function getExif(filePath) {
+  const res = await fetch(`${BASE_URL}/api/media/exif?path=${encodeURIComponent(filePath)}`, {
+    credentials: 'include'
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || '사진 정보를 불러오지 못했습니다.');
+  return data.exif || {};
+}
+
+export async function getDocumentPreview(filePath) {
+  const res = await fetch(`${BASE_URL}/api/media/document-preview?path=${encodeURIComponent(filePath)}`, {
+    credentials: 'include'
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || '문서 미리보기를 불러오지 못했습니다.');
+  return data.preview || null;
+}
+
 /**
  * XHR 기반 실시간 업로드 (진행률 및 실시간 전송 속도 계산)
  */

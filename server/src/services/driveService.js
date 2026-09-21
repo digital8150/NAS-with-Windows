@@ -155,7 +155,40 @@ async function getMountedDrives(forceRefresh = false) {
     return drives;
 }
 
+const os = require('os');
+
+/**
+ * Windows 현재 사용자 표준 라이브러리 폴더 목록 조회 (다운로드, 문서, 사진, 동영상, 음악, 바탕화면)
+ * @returns {Array<{ id: string, name: string, path: string, icon: string }>}
+ */
+function getUserLibraries() {
+    const home = os.homedir();
+    const libDefs = [
+        { id: 'downloads', name: '다운로드', sub: 'Downloads', icon: 'Download' },
+        { id: 'documents', name: '내 문서', sub: 'Documents', icon: 'FileText' },
+        { id: 'pictures', name: '내 사진', sub: 'Pictures', icon: 'Image' },
+        { id: 'videos', name: '내 동영상', sub: 'Videos', icon: 'Film' },
+        { id: 'music', name: '내 음악', sub: 'Music', icon: 'Music' },
+        { id: 'desktop', name: '바탕화면', sub: 'Desktop', icon: 'Monitor' }
+    ];
+
+    const libraries = [];
+    for (const item of libDefs) {
+        const fullPath = path.join(home, item.sub);
+        if (fs.existsSync(fullPath)) {
+            libraries.push({
+                id: item.id,
+                name: item.name,
+                path: fullPath,
+                icon: item.icon
+            });
+        }
+    }
+    return libraries;
+}
+
 module.exports = {
     getMountedDrives,
+    getUserLibraries,
     formatBytes
 };

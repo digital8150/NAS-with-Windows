@@ -5,6 +5,7 @@ import Sidebar from './components/layout/Sidebar';
 import Header from './components/layout/Header';
 import Breadcrumb from './components/explorer/Breadcrumb';
 import DriveSelector from './components/explorer/DriveSelector';
+import CategoryFilterToolbar from './components/explorer/CategoryFilterToolbar';
 import FileGrid from './components/explorer/FileGrid';
 import FileList from './components/explorer/FileList';
 import SelectionToolbar from './components/layout/SelectionToolbar';
@@ -236,7 +237,10 @@ function MainLayout() {
         {/* 경로 및 드라이브 내비게이션 바 */}
         <div className="px-7 pt-4 pb-2 space-y-2.5">
           <DriveSelector />
-          <Breadcrumb />
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <Breadcrumb />
+            <CategoryFilterToolbar />
+          </div>
         </div>
 
         {/* 메인 파일 뷰 */}

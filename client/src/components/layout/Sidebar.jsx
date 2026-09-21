@@ -1,32 +1,36 @@
-import React from 'react';
 import {
   HardDrive,
-  Files,
   Film,
   Image as ImageIcon,
   FileText,
+  Music,
+  Download,
+  Monitor,
   LogOut,
   PlayCircle
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 import { useAuth } from '../../contexts/AuthContext';
 
+const LIB_ICONS = {
+  downloads: Download,
+  documents: FileText,
+  pictures: ImageIcon,
+  videos: Film,
+  music: Music,
+  desktop: Monitor
+};
+
 export default function Sidebar() {
   const {
     drives,
+    libraries,
     currentDrive,
+    currentPath,
     selectDrive,
-    categoryFilter,
-    setCategoryFilter
+    navigateTo
   } = useExplorer();
   const { logout, user, serverName } = useAuth();
-
-  const categories = [
-    { id: 'all', label: '전체 파일', icon: Files },
-    { id: 'image', label: '사진', icon: ImageIcon },
-    { id: 'video', label: '동영상', icon: Film },
-    { id: 'document', label: '문서', icon: FileText }
-  ];
 
   const displayName = serverName || '개인 저장소';
 
@@ -43,33 +47,36 @@ export default function Sidebar() {
       </div>
 
       <div className="flex-1 overflow-y-auto space-y-5 sidebar-scrollbar pr-1">
-        {/* 2. 라이브러리 섹션 */}
-        <div>
-          <div className="px-3 text-[13px] font-semibold text-[#8e8e93] mb-2 tracking-wide">
-            라이브러리
-          </div>
-          <div className="space-y-1">
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              const isSelected = categoryFilter === cat.id;
+        {/* 2. 내 라이브러리 바로가기 섹션 */}
+        {libraries.length > 0 && (
+          <div>
+            <div className="px-3 text-[13px] font-semibold text-[#8e8e93] mb-2 tracking-wide">
+              라이브러리
+            </div>
+            <div className="space-y-1">
+              {libraries.map((lib) => {
+                const Icon = LIB_ICONS[lib.id] || FileText;
+                const isSelected = currentPath && currentPath.toLowerCase() === lib.path.toLowerCase();
 
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setCategoryFilter(cat.id)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition ${
-                    isSelected
-                      ? 'bg-[#27223e] text-[#a594fd] font-semibold'
-                      : 'text-[#d4d4d8] hover:bg-[#232328] hover:text-white'
-                  }`}
-                >
-                  <Icon className={`h-4 w-4 shrink-0 ${isSelected ? 'text-[#a594fd]' : 'text-[#a1a1aa]'}`} />
-                  <span className="truncate">{cat.label}</span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={lib.id}
+                    onClick={() => navigateTo(lib.path)}
+                    title={lib.name}
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition ${
+                      isSelected
+                        ? 'bg-[#27223e] text-[#a594fd] font-semibold'
+                        : 'text-[#d4d4d8] hover:bg-[#232328] hover:text-white'
+                    }`}
+                  >
+                    <Icon className={`h-4 w-4 shrink-0 ${isSelected ? 'text-[#a594fd]' : 'text-[#a1a1aa]'}`} />
+                    <span className="truncate">{lib.name}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* 3. Windows 드라이브 섹션 */}
         <div>

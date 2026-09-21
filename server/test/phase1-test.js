@@ -54,10 +54,13 @@ async function runAllTests() {
         assert.throws(() => validateAndResolvePath('C:\\Program Files (x86)\\test'), /Protected System Resource/);
     });
 
-    it('Should block C:\\Users and user private profiles', () => {
+    it('Should block C:\\Users root, other profiles, and AppData while allowing standard libraries', () => {
         assert.throws(() => validateAndResolvePath('C:\\Users'), /Protected System Resource/);
-        assert.throws(() => validateAndResolvePath('C:\\Users\\admin\\Desktop'), /Protected System Resource/);
         assert.throws(() => validateAndResolvePath('C:\\Users\\Default'), /Protected System Resource/);
+        assert.throws(() => validateAndResolvePath('C:\\Users\\admin\\AppData\\Local'), /Protected System Resource/);
+        // 표준 라이브러리(다운로드, 바탕화면 등)는 안전하게 허용
+        const desktopPath = validateAndResolvePath('C:\\Users\\admin\\Desktop');
+        assert(desktopPath.toLowerCase().includes('desktop'));
     });
 
     it('Should block System Volume Information and $Recycle.Bin on ANY drive', () => {

@@ -10,10 +10,12 @@ const SYSTEM_EXCLUDES = [
     /^c:\\program files(?: \(x86\))?/i,
     /^c:\\programdata/i,
     /^c:\\users/i,
+    /^c:\\documents and settings/i,
     /^c:\\recovery/i,
     /^c:\\boot/i,
     /^c:\\\$getcurrent/i,
     /^c:\\perflogs/i,
+    /^c:\\msocache/i,
 
     // 모든 드라이브 공통 시스템/볼륨/메타데이터 폴더 및 파일
     /(?:^|[\\/])\$recycle\.bin(?:[\\/]|$)/i,
@@ -23,6 +25,42 @@ const SYSTEM_EXCLUDES = [
     /(?:^|[\\/])\$(?:mft|logfile)(?:[\\/]|$)/i
 ];
 
+const os = require('os');
+
+/**
+ * Windows 현재 사용자 홈 디렉토리 및 허용된 표준 라이브러리 폴더 목록
+ */
+const USER_HOME = path.normalize(os.homedir()).toLowerCase();
+const ALLOWED_USER_SUBDIRS = ['downloads', 'documents', 'pictures', 'videos', 'music', 'desktop'];
+
+/**
+ * 사용자 라이브러리(다운로드, 문서, 사진, 동영상, 음악, 바탕화면) 하위 경로인지 확인
+ * 단, AppData, Local Settings, NTUSER 등 민감한 시스템 폴더는 제외
+ * @param {string} normalizedPath 
+ * @returns {boolean}
+ */
+function isUserLibraryPath(normalizedPath) {
+    const lower = normalizedPath.toLowerCase();
+    
+    // 민감한 사용자 내부 시스템 설정 폴더 차단
+    if (/(?:[\\/])(appdata|local settings|application data)(?:[\\/]|$)/i.test(lower)) {
+        return false;
+    }
+    if (/(?:[\\/])ntuser[^\\]*$/i.test(lower)) {
+        return false;
+    }
+
+    // 허용된 사용자 라이브러리 폴더 또는 그 하위 폴더인지 확인
+    for (const sub of ALLOWED_USER_SUBDIRS) {
+        const libPrefix = path.join(USER_HOME, sub).toLowerCase();
+        if (lower === libPrefix || lower.startsWith(libPrefix + '\\')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 /**
  * 특정 파일/폴더 이름 또는 전체 경로가 시스템 보호 대상인지 검사
  * @param {string} targetPath - 파일명 또는 전체 경로
@@ -31,6 +69,12 @@ const SYSTEM_EXCLUDES = [
 function isSystemProtectedPath(targetPath) {
     if (!targetPath) return true;
     const normalized = path.normalize(targetPath);
+
+    // 허용된 사용자 표준 라이브러리(다운로드, 문서, 사진 등)는 접근 허용
+    if (isUserLibraryPath(normalized)) {
+        return false;
+    }
+
     return SYSTEM_EXCLUDES.some(pattern => pattern.test(normalized));
 }
 
@@ -86,5 +130,6 @@ function validateAndResolvePath(requestedPath) {
 module.exports = {
     SYSTEM_EXCLUDES,
     isSystemProtectedPath,
+    isUserLibraryPath,
     validateAndResolvePath
 };

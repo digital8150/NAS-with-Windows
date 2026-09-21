@@ -7,6 +7,12 @@ const { requireAuth } = require('../middleware/auth');
 const { validateAndResolvePath } = require('../config/security');
 const { probeMedia, streamRangeFile, streamRemuxVideo } = require('../services/mediaService');
 const { loadAndConvertSubtitle, extractEmbeddedSubtitle } = require('../services/subtitleService');
+const {
+    getPreviewImage,
+    extractAiPdf,
+    getExifData,
+    parseHwpDocument
+} = require('../services/previewService');
 
 // 미디어 API는 requireAuth 적용 (쿠키, Authorization 헤더, query token 모두 지원)
 router.use(requireAuth);
@@ -125,6 +131,130 @@ router.get('/view', (req, res) => {
     } catch (err) {
         return res.status(err.statusCode || 500).json({
             error: 'Streaming Failed',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/media/preview-image?path=...
+ * RAW 이미지(CR2, NEF, ARW, DNG), PSD, AI, TIFF 등의 실시간 프리뷰 이미지 서빙
+ */
+router.get('/preview-image', async (req, res) => {
+    try {
+        const rawPath = req.query.path;
+        if (!rawPath) {
+            return res.status(400).json({ error: 'Path parameter is required' });
+        }
+
+        const safePath = validateAndResolvePath(rawPath);
+        if (!fs.existsSync(safePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        const result = await getPreviewImage(safePath);
+        res.setHeader('Content-Type', result.contentType);
+        res.setHeader('Cache-Control', 'private, max-age=86400');
+        return res.send(result.buffer);
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: 'Preview Generation Failed',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/media/view-pdf?path=...
+ * AI 파일 내장 PDF 스트림 또는 PDF 파일 직접 서빙
+ */
+router.get('/view-pdf', async (req, res) => {
+    try {
+        const rawPath = req.query.path;
+        if (!rawPath) {
+            return res.status(400).json({ error: 'Path parameter is required' });
+        }
+
+        const safePath = validateAndResolvePath(rawPath);
+        if (!fs.existsSync(safePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        const ext = path.extname(safePath).toLowerCase();
+        if (ext === '.ai') {
+            const pdfBuffer = await extractAiPdf(safePath);
+            if (!pdfBuffer) {
+                return res.status(400).json({ error: 'No PDF stream found in this AI file' });
+            }
+            res.setHeader('Content-Type', 'application/pdf');
+            res.setHeader('Content-Disposition', 'inline; filename="' + encodeURIComponent(path.basename(safePath, '.ai') + '.pdf') + '"');
+            return res.send(pdfBuffer);
+        }
+
+        // 일반 PDF 파일은 파일 서빙
+        res.setHeader('Content-Type', 'application/pdf');
+        return fs.createReadStream(safePath).pipe(res);
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: 'PDF Preview Failed',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/media/exif?path=...
+ * RAW / 사진 파일의 상세 EXIF 메타데이터 (카메라 모델, 렌즈, ISO, 조리개, 셔터스피드 등)
+ */
+router.get('/exif', async (req, res) => {
+    try {
+        const rawPath = req.query.path;
+        if (!rawPath) {
+            return res.status(400).json({ error: 'Path parameter is required' });
+        }
+
+        const safePath = validateAndResolvePath(rawPath);
+        if (!fs.existsSync(safePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        const exif = await getExifData(safePath);
+        return res.json({
+            success: true,
+            exif: exif || {}
+        });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: 'EXIF Extraction Failed',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/media/document-preview?path=...
+ * 한글(HWP, HWPX) 등 특수 문서의 텍스트 및 메타데이터 추출
+ */
+router.get('/document-preview', async (req, res) => {
+    try {
+        const rawPath = req.query.path;
+        if (!rawPath) {
+            return res.status(400).json({ error: 'Path parameter is required' });
+        }
+
+        const safePath = validateAndResolvePath(rawPath);
+        if (!fs.existsSync(safePath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        const previewData = await parseHwpDocument(safePath);
+        return res.json({
+            success: true,
+            preview: previewData
+        });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: 'Document Preview Failed',
             message: err.message
         });
     }

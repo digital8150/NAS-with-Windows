@@ -10,16 +10,24 @@ import {
   Subtitles
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
-import { getDownloadUrl } from '../../services/api';
+import { getDownloadUrl, getPreviewImageUrl } from '../../services/api';
+
+const SPECIAL_IMAGE_EXTS = ['.cr2', '.cr3', '.nef', '.arw', '.dng', '.raf', '.orf', '.rw2', '.pef', '.psd', '.ai', '.tiff', '.tif'];
 
 function FileThumbnail({ item, iconSize = 'h-12 w-12' }) {
-  if (item.category === 'image' && !item.isDirectory) {
+  const [thumbError, setThumbError] = React.useState(false);
+  const ext = item.ext?.toLowerCase() || '';
+  const isSpecial = SPECIAL_IMAGE_EXTS.includes(ext);
+
+  if (item.category === 'image' && !item.isDirectory && !thumbError) {
+    const src = isSpecial ? getPreviewImageUrl(item.path) : getDownloadUrl(item.path);
     return (
       <div className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] overflow-hidden">
         <img
-          src={getDownloadUrl(item.path)}
+          src={src}
           alt={item.name}
           loading="lazy"
+          onError={() => setThumbError(true)}
           className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
         />
       </div>

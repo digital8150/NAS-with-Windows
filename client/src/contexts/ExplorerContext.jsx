@@ -30,6 +30,7 @@ export function ExplorerProvider({ children }) {
   const initialUrlCategory = searchParams.get('category') || 'all';
 
   const [drives, setDrives] = useState([]);
+  const [libraries, setLibraries] = useState([]);
   const [currentDrive, setCurrentDrive] = useState(null);
   const [currentPath, setCurrentPath] = useState(() => initialUrlPath);
   const [parentPath, setParentPath] = useState(null);
@@ -52,13 +53,15 @@ export function ExplorerProvider({ children }) {
   // 초기 로드 완료 플래그 (중복 초기화 방지)
   const hasInitializedRef = useRef(false);
 
-  // 2. 드라이브 목록 로드 (순수 API 호출 함수: searchParams/currentDrive 의존성 제거)
+  // 2. 드라이브 및 라이브러리 목록 로드
   const loadDrives = useCallback(async (forceRefresh = false) => {
     if (!authenticated) return [];
     try {
       const data = await getDrives(forceRefresh);
       const loadedDrives = data.drives || [];
+      const loadedLibs = data.libraries || [];
       setDrives(loadedDrives);
+      setLibraries(loadedLibs);
       return loadedDrives;
     } catch (err) {
       console.error('드라이브 로드 실패:', err);
@@ -258,10 +261,12 @@ export function ExplorerProvider({ children }) {
   return (
     <ExplorerContext.Provider value={{
       drives,
+      libraries,
       currentDrive,
       currentPath,
       parentPath,
       items: filteredItems,
+      rawItems: items,
       rawItemsCount: items.length,
       loading,
       error,

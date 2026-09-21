@@ -121,7 +121,7 @@ export default function VideoPlayer({ item }) {
           containerRef.current.innerHTML = '';
         }
 
-        artInstance = new Artplayer({
+        const artOptions = {
           container: containerRef.current,
           url: initialVideoUrl,
           volume: 0.75,
@@ -161,12 +161,14 @@ export default function VideoPlayer({ item }) {
               textShadow: '0 2px 4px rgba(0,0,0,0.95), 0 0 2px rgba(0,0,0,0.9)',
               fontWeight: '600'
             }
-          } : undefined,
+          } : {},
           settings: [
             ...subtitleSettings,
             ...audioSettings
           ]
-        });
+        };
+
+        artInstance = new Artplayer(artOptions);
 
         artInstance.on('video:error', () => {
           if (!isMounted) return;

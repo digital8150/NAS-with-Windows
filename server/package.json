@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/phase1-test.js && node test/phase2-test.js && node test/api-test.js"
+    "test": "node test/phase1-test.js && node test/phase2-test.js && node test/preview-enhancement-test.js && node test/api-test.js"
   },
   "keywords": [
     "nas",
@@ -18,13 +18,16 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "cfb": "^1.2.2",
     "chardet": "^2.2.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "exifr": "^7.1.3",
     "express": "^4.21.2",
     "iconv-lite": "^0.7.3",
     "jsonwebtoken": "^9.0.2",
+    "jszip": "^3.10.2",
     "multer": "^2.4.0"
   }
 }

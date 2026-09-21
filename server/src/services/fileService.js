@@ -6,8 +6,17 @@ const { formatBytes } = require('./driveService');
 const EXTENSION_CATEGORIES = {
     video: ['.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v', '.ts', '.m2ts'],
     audio: ['.mp3', '.flac', '.aac', '.wav', '.m4a', '.ogg', '.wma', '.ape', '.opus'],
-    image: ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff'],
-    document: ['.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.md', '.log', '.csv', '.json', '.xml', '.hwp'],
+    image: [
+        '.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg', '.ico', '.tiff', '.tif', '.avif',
+        '.cr2', '.cr3', '.nef', '.arw', '.dng', '.raf', '.orf', '.rw2', '.pef',
+        '.psd'
+    ],
+    document: [
+        '.pdf', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.md', '.markdown',
+        '.log', '.csv', '.tsv', '.json', '.xml', '.yaml', '.yml', '.ini', '.conf',
+        '.hwp', '.hwpx', '.ai',
+        '.sql', '.sh', '.bat', '.cmd', '.py', '.js', '.jsx', '.ts', '.tsx', '.html', '.css'
+    ],
     archive: ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.iso'],
     subtitle: ['.srt', '.smi', '.vtt', '.ass', '.ssa', '.sub']
 };
@@ -61,9 +70,17 @@ function validateFileName(name) {
 async function listDirectory(targetPath) {
     const safePath = validateAndResolvePath(targetPath);
 
-    const stat = await fs.promises.stat(safePath);
+    let stat;
+    try {
+        stat = await fs.promises.stat(safePath);
+    } catch (e) {
+        const err = new Error(e.code === 'ENOENT' ? '폴더를 찾을 수 없습니다.' : '접근할 수 없는 폴더입니다.');
+        err.statusCode = e.code === 'ENOENT' ? 404 : 403;
+        throw err;
+    }
+
     if (!stat.isDirectory()) {
-        const err = new Error('Path is not a directory');
+        const err = new Error('폴더가 아닙니다.');
         err.statusCode = 400;
         throw err;
     }
@@ -73,7 +90,14 @@ async function listDirectory(targetPath) {
     const isRoot = safePath.toLowerCase() === `${driveLetter.toLowerCase()}:\\`;
     const parentPath = isRoot ? null : path.dirname(safePath);
 
-    const entries = await fs.promises.readdir(safePath, { withFileTypes: true });
+    let entries;
+    try {
+        entries = await fs.promises.readdir(safePath, { withFileTypes: true });
+    } catch (e) {
+        const err = new Error('접근 권한이 없거나 보호된 시스템 폴더입니다.');
+        err.statusCode = (e.code === 'EACCES' || e.code === 'EPERM') ? 403 : 500;
+        throw err;
+    }
     const items = [];
 
     for (const entry of entries) {
