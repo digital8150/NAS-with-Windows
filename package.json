@@ -1,0 +1,21 @@
+{
+  "name": "universal-react-nas-engine",
+  "version": "1.0.0",
+  "description": "Windows Host Universal React NAS Engine with Multi-Drive, Blacklist Security, and Streaming",
+  "scripts": {
+    "build": "npm --prefix client run build",
+    "start": "node server/src/index.js",
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "test": "npm --prefix server test"
+  },
+  "keywords": [
+    "nas",
+    "react",
+    "windows",
+    "express",
+    "ffmpeg",
+    "streaming"
+  ],
+  "license": "MIT"
+}
