@@ -50,6 +50,15 @@ function isUserLibraryPath(normalizedPath) {
         return false;
     }
 
+    // C:\Users\<username>\<allowedSubdir> 형태 검사
+    const userLibMatch = lower.match(/^c:\\users\\[^\\]+\\([^\\]+)/i);
+    if (userLibMatch) {
+        const sub = userLibMatch[1];
+        if (ALLOWED_USER_SUBDIRS.includes(sub)) {
+            return true;
+        }
+    }
+
     // 허용된 사용자 라이브러리 폴더 또는 그 하위 폴더인지 확인
     for (const sub of ALLOWED_USER_SUBDIRS) {
         const libPrefix = path.join(USER_HOME, sub).toLowerCase();

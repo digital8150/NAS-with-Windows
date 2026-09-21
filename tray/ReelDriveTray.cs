@@ -11,12 +11,14 @@ namespace ReelDriveTray
 {
     static class Program
     {
+        private static System.Threading.Mutex _appMutex;
+
         [STAThread]
         static void Main()
         {
-            // 중복 실행 시 조용히 종료 (팝업 창으로 인한 블로킹 방지)
-            var currentProc = Process.GetCurrentProcess();
-            if (Process.GetProcessesByName(currentProc.ProcessName).Length > 1)
+            bool createdNew;
+            _appMutex = new System.Threading.Mutex(true, "UniversalReactNASEngineTrayMutex_Art", out createdNew);
+            if (!createdNew)
             {
                 return;
             }
@@ -25,7 +27,7 @@ namespace ReelDriveTray
             {
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
-                Application.Run(new HiddenMainForm());
+                Application.Run(new TrayAppContext());
             }
             catch (Exception ex)
             {
@@ -36,10 +38,18 @@ namespace ReelDriveTray
                 }
                 catch { }
             }
+            finally
+            {
+                if (_appMutex != null)
+                {
+                    try { _appMutex.ReleaseMutex(); } catch { }
+                    _appMutex.Dispose();
+                }
+            }
         }
     }
 
-    public class HiddenMainForm : Form
+    public class TrayAppContext : ApplicationContext
     {
         [System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Auto)]
         private static extern bool DestroyIcon(IntPtr handle);
@@ -52,6 +62,9 @@ namespace ReelDriveTray
         private Timer _healthTimer;
         private bool _isServicesRunning = false;
 
+        private Icon _iconActive;
+        private Icon _iconInactive;
+
         private readonly string _repoDir;
         private readonly string _nginxExe = @"C:\nginx\nginx.exe";
         private readonly string _nginxDir = @"C:\nginx";
@@ -62,15 +75,8 @@ namespace ReelDriveTray
         private const string AppName = "ReelDriveNAS";
         private static readonly string HostName = Environment.MachineName.Length > 20 ? Environment.MachineName.Substring(0, 20) : Environment.MachineName;
 
-        public HiddenMainForm()
+        public TrayAppContext()
         {
-            // 백그라운드 폼 속성 (화면 표시 배제)
-            this.WindowState = FormWindowState.Minimized;
-            this.ShowInTaskbar = false;
-            this.FormBorderStyle = FormBorderStyle.None;
-            this.Size = new Size(0, 0);
-            this.Opacity = 0;
-
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
             if (Directory.Exists(Path.Combine(baseDir, "server")))
             {
@@ -80,10 +86,17 @@ namespace ReelDriveTray
             {
                 _repoDir = Path.GetFullPath(Path.Combine(baseDir, ".."));
             }
+            else if (Directory.Exists(@"F:\repos\NAS-with-Windows\server"))
+            {
+                _repoDir = @"F:\repos\NAS-with-Windows";
+            }
             else
             {
-                _repoDir = @"E:\repos\NAS-with-Windows";
+                _repoDir = baseDir;
             }
+
+            _iconActive = CreateAppIcon(true);
+            _iconInactive = CreateAppIcon(false);
 
             InitializeComponents();
             StartServices();
@@ -98,13 +111,6 @@ namespace ReelDriveTray
 
             // 시작 안내 풍선 알림
             _notifyIcon.ShowBalloonTip(3000, HostName + " 개인 저장소", "서버가 정상적으로 시작되었습니다.\n트레이 아이콘을 더블클릭하면 웹 저장소가 열립니다.", ToolTipIcon.Info);
-        }
-
-        protected override void OnLoad(EventArgs e)
-        {
-            base.OnLoad(e);
-            this.Visible = false;
-            this.Hide();
         }
 
         private void InitializeComponents()
@@ -142,7 +148,7 @@ namespace ReelDriveTray
 
             _notifyIcon = new NotifyIcon
             {
-                Icon = CreateAppIcon(true),
+                Icon = _iconActive,
                 ContextMenuStrip = _contextMenu,
                 Text = HostName + " 개인 저장소",
                 Visible = true
@@ -233,9 +239,10 @@ namespace ReelDriveTray
                     string indexPath = Path.Combine(_repoDir, "server", "src", "index.js");
                     if (File.Exists(indexPath))
                     {
+                        string nodeBin = File.Exists(@"C:\Program Files\nodejs\node.exe") ? @"C:\Program Files\nodejs\node.exe" : "node.exe";
                         var nodePsi = new ProcessStartInfo
                         {
-                            FileName = "node.exe",
+                            FileName = nodeBin,
                             Arguments = "server/src/index.js",
                             WorkingDirectory = _repoDir,
                             WindowStyle = ProcessWindowStyle.Hidden,
@@ -287,7 +294,7 @@ namespace ReelDriveTray
                 _menuToggleService.Text = "▶️ 서버 시작";
                 _menuStatus.Text = "● 서비스 중지됨";
                 _menuStatus.ForeColor = Color.Gray;
-                _notifyIcon.Icon = CreateAppIcon(false);
+                _notifyIcon.Icon = _iconInactive;
                 _notifyIcon.Text = HostName + " 저장소 (중지됨)";
             }
             catch { }
@@ -333,7 +340,7 @@ namespace ReelDriveTray
                         _menuStatus.Text = "● 정상 작동 중";
                         _menuStatus.ForeColor = Color.DarkGreen;
                         _notifyIcon.Text = HostName + " 개인 저장소 (정상 작동 중)";
-                        _notifyIcon.Icon = CreateAppIcon(true);
+                        _notifyIcon.Icon = _iconActive;
                         _menuToggleService.Text = "🛑 서버 일시 중지";
                         return;
                     }
@@ -352,7 +359,7 @@ namespace ReelDriveTray
                 _menuStatus.Text = "● 서비스 중지됨";
                 _menuStatus.ForeColor = Color.Gray;
                 _notifyIcon.Text = HostName + " 개인 저장소 (중지됨)";
-                _notifyIcon.Icon = CreateAppIcon(false);
+                _notifyIcon.Icon = _iconInactive;
             }
         }
 
@@ -492,7 +499,10 @@ namespace ReelDriveTray
                 _notifyIcon.Dispose();
             }
 
-            Application.Exit();
+            if (_iconActive != null) _iconActive.Dispose();
+            if (_iconInactive != null) _iconInactive.Dispose();
+
+            ExitThread();
         }
 
         protected override void Dispose(bool disposing)
@@ -502,6 +512,8 @@ namespace ReelDriveTray
                 if (_healthTimer != null) _healthTimer.Dispose();
                 if (_notifyIcon != null) _notifyIcon.Dispose();
                 if (_contextMenu != null) _contextMenu.Dispose();
+                if (_iconActive != null) _iconActive.Dispose();
+                if (_iconInactive != null) _iconInactive.Dispose();
             }
             base.Dispose(disposing);
         }
