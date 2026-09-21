@@ -12,6 +12,7 @@ import AuthModal from './components/common/AuthModal';
 import LockoutScreen from './components/common/LockoutScreen';
 import CustomDialog from './components/common/CustomDialog';
 import UploadToast from './components/common/UploadToast';
+import PreviewModal from './components/preview/PreviewModal';
 import {
   createFolder as apiCreateFolder,
   renameItem as apiRenameItem,
@@ -27,6 +28,9 @@ function MainLayout() {
     refresh,
     items
   } = useExplorer();
+
+  // 미리보기 모달 상태
+  const [previewItem, setPreviewItem] = useState(null);
 
   // 모달 다이얼로그 상태
   const [dialogState, setDialogState] = useState({
@@ -227,9 +231,9 @@ function MainLayout() {
         {/* 메인 파일 뷰 */}
         <main className="flex-1 overflow-y-auto px-7 pb-6 scrollbar-thin">
           {viewMode === 'grid' ? (
-            <FileGrid onOpenFile={(item) => console.log('Open:', item)} />
+            <FileGrid onOpenFile={(item) => setPreviewItem(item)} />
           ) : (
-            <FileList onOpenFile={(item) => console.log('Open:', item)} />
+            <FileList onOpenFile={(item) => setPreviewItem(item)} />
           )}
         </main>
 
@@ -260,7 +264,18 @@ function MainLayout() {
       <SelectionToolbar
         onRename={handleOpenRename}
         onDelete={handleOpenDelete}
+        onPreview={(item) => setPreviewItem(item)}
       />
+
+      {/* 파일 미리보기 모달 */}
+      {previewItem && (
+        <PreviewModal
+          item={previewItem}
+          allItems={items}
+          onClose={() => setPreviewItem(null)}
+          onSelectItem={(item) => setPreviewItem(item)}
+        />
+      )}
 
       {/* 업로드 진행 토스트 */}
       <UploadToast

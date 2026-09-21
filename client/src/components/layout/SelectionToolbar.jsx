@@ -1,9 +1,9 @@
 import React from 'react';
-import { Download, Edit3, Trash2, X } from 'lucide-react';
+import { Download, Edit3, Trash2, X, Eye } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 import { getDownloadUrl } from '../../services/api';
 
-export default function SelectionToolbar({ onRename, onDelete }) {
+export default function SelectionToolbar({ onRename, onDelete, onPreview }) {
   const { selectedPaths, clearSelection, items } = useExplorer();
 
   if (selectedPaths.size === 0) return null;
@@ -25,6 +25,16 @@ export default function SelectionToolbar({ onRename, onDelete }) {
       <span className="font-semibold text-[#191919] pr-3 border-r border-[#E9E9E7]">
         {count}개 선택됨
       </span>
+
+      {isSingle && singleItem && !singleItem.isDirectory && onPreview && (
+        <button
+          onClick={() => onPreview(singleItem)}
+          className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-[#37352F] transition hover:bg-[#F7F6F3] hover:text-[#7F6DF2]"
+        >
+          <Eye className="h-4 w-4 text-[#73726E]" />
+          <span>미리보기</span>
+        </button>
+      )}
 
       {isSingle && singleItem && !singleItem.isDirectory && (
         <button
