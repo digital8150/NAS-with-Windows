@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
@@ -55,13 +57,22 @@ app.use('/api/media-info', (req, res, next) => { req.url = '/info'; mediaRoutes(
 app.use('/api/subtitle', (req, res, next) => { req.url = '/subtitle'; mediaRoutes(req, res, next); });
 app.use('/api/view', (req, res, next) => { req.url = '/view'; mediaRoutes(req, res, next); });
 
-// 404 핸들러
+// 404 핸들러 (API 전용)
 app.use('/api/*', (req, res) => {
     res.status(404).json({
         error: 'Not Found',
         message: `API endpoint '${req.originalUrl}' does not exist.`
     });
 });
+
+// React 프로덕션 빌드 정적 파일 서빙
+const clientDistPath = path.resolve(__dirname, '../../client/dist');
+if (fs.existsSync(clientDistPath)) {
+    app.use(express.static(clientDistPath));
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(clientDistPath, 'index.html'));
+    });
+}
 
 // 글로벌 에러 핸들러
 app.use((err, req, res, next) => {

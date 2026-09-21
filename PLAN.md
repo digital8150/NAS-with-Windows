@@ -310,10 +310,13 @@ client/src/
   - FFmpeg 온더플라이 실시간 AAC 리먹싱, 206 Range 스트리밍, ffprobe 분석 (`mediaService.js`, `media.js`)
   - `.smi` → `.srt` 실시간 파서(CP949/EUC-KR 자동 감지) 및 다국어 외부 자막 매칭 로직 탑재 (`subtitleService.js`)
   - Phase 2 종합 테스트 스위트 및 E2E API 통합 검증 완료 (`phase2-test.js`, `api-test.js`)
-- [ ] **Phase 3: React + Tailwind CSS 프론트엔드 구축**
+- [x] **Phase 3: React + Tailwind CSS 프론트엔드 구축 (완료)**
   - Vite + React + Tailwind CSS 환경 구성 (`client/`)
   - 탐색기 레이아웃: 사이드바, 드라이브 선택기, 브레드크럼, 파일 그리드/리스트
   - 줌 슬라이더 및 파일 카테고리 필터링
+  - 무차별 대입 15분 잠금 카운트다운 화면 및 마스터 인증 모달
+  - XHR 실시간 속도(MB/s) 측정 업로드 토스트 및 다이얼로그 모달
+  - Vite 프로덕션 빌드 번들링 및 Express 정적 서빙 연동 완료
 - [ ] **Phase 4: 미디어 플레이어 & 모달 연동**
   - Artplayer React 컴포넌트화 (오디오 트랙 전환, 자막 선택, 전체화면 버그 패치)
   - 연속 이미지 갤러리 및 오디오 카드 플레이어
