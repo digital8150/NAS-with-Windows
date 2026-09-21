@@ -59,7 +59,7 @@ export default function FileList({ onOpenFile }) {
 
   if (loading) {
     return (
-      <div className="flex h-72 items-center justify-center text-[#73726E] text-sm">
+      <div className="flex h-72 items-center justify-center text-[#73726E] text-[15px]">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F6DF2] border-t-transparent mr-3" />
         불러오는 중...
       </div>
@@ -68,7 +68,7 @@ export default function FileList({ onOpenFile }) {
 
   if (error) {
     return (
-      <div className="flex h-72 items-center justify-center text-[#E03E3E] text-sm">
+      <div className="flex h-72 items-center justify-center text-[#E03E3E] text-[15px]">
         {error}
       </div>
     );
@@ -94,8 +94,8 @@ export default function FileList({ onOpenFile }) {
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-[#E9E9E7] bg-white shadow-xs select-none">
-      <table className="w-full text-left text-sm text-[#37352F]">
-        <thead className="border-b border-[#E9E9E7] text-xs font-semibold text-[#73726E] bg-white">
+      <table className="w-full text-left text-[15px] text-[#37352F]">
+        <thead className="border-b border-[#E9E9E7] text-sm font-semibold text-[#73726E] bg-white">
           <tr>
             <th
               onClick={() => handleSort('name')}
@@ -134,13 +134,13 @@ export default function FileList({ onOpenFile }) {
               onClick={navigateUp}
               className="hover:bg-[#F7F6F3] transition cursor-pointer text-[#7F6DF2]"
             >
-              <td className="py-3 pl-6 pr-4 flex items-center gap-3">
+              <td className="py-3.5 pl-6 pr-4 flex items-center gap-3">
                 <ArrowUp className="h-4 w-4" />
-                <span className="font-semibold text-sm">..</span>
+                <span className="font-semibold text-[15px]">..</span>
               </td>
-              <td className="py-3 px-6 text-[#9B9A97] text-xs">-</td>
-              <td className="py-3 px-6 text-[#9B9A97] text-xs hidden md:table-cell">-</td>
-              <td className="py-3 pl-6 pr-8 text-[#9B9A97] text-xs hidden sm:table-cell">-</td>
+              <td className="py-3.5 px-6 text-[#9B9A97] text-sm font-mono">-</td>
+              <td className="py-3.5 px-6 text-[#9B9A97] text-sm hidden md:table-cell font-mono">-</td>
+              <td className="py-3.5 pl-6 pr-8 text-[#9B9A97] text-sm hidden sm:table-cell font-mono">-</td>
             </tr>
           )}
 
@@ -164,18 +164,18 @@ export default function FileList({ onOpenFile }) {
                 <td className="py-3.5 pl-6 pr-4">
                   <div className="flex items-center gap-3">
                     <FileIcon category={item.category} className="h-4 w-4 shrink-0" />
-                    <span className="truncate max-w-[320px] sm:max-w-lg font-medium text-sm text-[#37352F]">
+                    <span className="truncate max-w-[320px] sm:max-w-lg font-medium text-[15px] text-[#37352F]">
                       {item.name}
                     </span>
                   </div>
                 </td>
-                <td className="py-3.5 px-6 text-[#73726E] text-xs font-mono">
+                <td className="py-3.5 px-6 text-[#73726E] text-sm font-mono">
                   {item.isDirectory ? '-' : item.sizeFormatted}
                 </td>
-                <td className="py-3.5 px-6 text-[#73726E] text-xs uppercase hidden md:table-cell font-mono">
+                <td className="py-3.5 px-6 text-[#73726E] text-sm uppercase hidden md:table-cell font-mono">
                   {item.isDirectory ? '폴더' : (item.ext ? item.ext.replace('.', '') : '-')}
                 </td>
-                <td className="py-3.5 pl-6 pr-8 text-[#73726E] text-xs hidden sm:table-cell font-mono">
+                <td className="py-3.5 pl-6 pr-8 text-[#73726E] text-sm hidden sm:table-cell font-mono">
                   {formatDate(item.mtime)}
                 </td>
               </tr>
@@ -184,7 +184,7 @@ export default function FileList({ onOpenFile }) {
 
           {items.length === 0 && !parentPath && (
             <tr>
-              <td colSpan="4" className="py-12 text-center text-sm text-[#9B9A97]">
+              <td colSpan="4" className="py-12 text-center text-[15px] text-[#9B9A97]">
                 폴더가 비어 있습니다.
               </td>
             </tr>

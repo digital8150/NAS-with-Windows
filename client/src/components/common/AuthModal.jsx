@@ -37,7 +37,7 @@ export default function AuthModal() {
             <PlayCircle className="h-7 w-7 fill-white/20" />
           </div>
           <h1 className="text-xl font-bold tracking-tight text-[#191919]">ReelDrive</h1>
-          <p className="mt-1 text-sm text-[#73726E]">저장소 비밀번호를 입력하세요.</p>
+          <p className="mt-1.5 text-[15px] text-[#73726E]">저장소 비밀번호를 입력하세요.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -49,12 +49,12 @@ export default function AuthModal() {
               placeholder="비밀번호"
               disabled={isSubmitting}
               autoFocus
-              className="w-full rounded-xl border border-[#C4C4C0] bg-white px-4 py-2.5 text-sm text-[#191919] placeholder-[#9B9A97] outline-none transition focus:border-[#7F6DF2] focus:ring-2 focus:ring-[#7F6DF2]/20 disabled:opacity-50"
+              className="w-full rounded-xl border border-[#C4C4C0] bg-white px-4 py-3 text-[15px] text-[#191919] placeholder-[#9B9A97] outline-none transition focus:border-[#7F6DF2] focus:ring-2 focus:ring-[#7F6DF2]/20 disabled:opacity-50"
             />
           </div>
 
           {errorMsg && (
-            <p className="text-xs text-[#E03E3E] leading-relaxed text-center font-medium">
+            <p className="text-sm text-[#E03E3E] leading-relaxed text-center font-medium">
               {errorMsg}
             </p>
           )}
@@ -62,7 +62,7 @@ export default function AuthModal() {
           <button
             type="submit"
             disabled={!password.trim() || isSubmitting}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7F6DF2] px-4 py-2.5 text-sm font-medium text-white transition hover:bg-[#6855dd] focus:outline-none focus:ring-2 focus:ring-[#7F6DF2]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#7F6DF2] px-4 py-3 text-[15px] font-medium text-white transition hover:bg-[#6855dd] focus:outline-none focus:ring-2 focus:ring-[#7F6DF2]/40 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

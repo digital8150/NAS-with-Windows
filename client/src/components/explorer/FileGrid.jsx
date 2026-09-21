@@ -58,7 +58,7 @@ export default function FileGrid({ onOpenFile }) {
 
   if (loading) {
     return (
-      <div className="flex h-72 items-center justify-center text-[#73726E] text-sm">
+      <div className="flex h-72 items-center justify-center text-[#73726E] text-[15px]">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F6DF2] border-t-transparent mr-3" />
         불러오는 중...
       </div>
@@ -67,7 +67,7 @@ export default function FileGrid({ onOpenFile }) {
 
   if (error) {
     return (
-      <div className="flex h-72 items-center justify-center text-[#E03E3E] text-sm">
+      <div className="flex h-72 items-center justify-center text-[#E03E3E] text-[15px]">
         {error}
       </div>
     );
@@ -77,7 +77,7 @@ export default function FileGrid({ onOpenFile }) {
     return (
       <div className="flex h-72 flex-col items-center justify-center text-[#9B9A97]">
         <Folder className="h-12 w-12 stroke-1 text-[#C4C4C0] mb-3" />
-        <span className="text-sm font-medium text-[#73726E]">폴더가 비어 있습니다.</span>
+        <span className="text-[15px] font-medium text-[#73726E]">폴더가 비어 있습니다.</span>
       </div>
     );
   }
@@ -130,16 +130,16 @@ export default function FileGrid({ onOpenFile }) {
             {/* 스크린샷 1:1 썸네일 영역 */}
             <FileThumbnail item={item} iconSize={iconSizes} />
 
-            {/* 파일명 (14px font-medium #37352F) */}
+            {/* 파일명 (15px font-medium #37352F) */}
             <span
-              className="mt-3 truncate text-center text-sm font-medium text-[#37352F] group-hover:text-[#191919]"
+              className="mt-3 truncate text-center text-[15px] font-medium text-[#37352F] group-hover:text-[#191919]"
               title={item.name}
             >
               {item.name}
             </span>
 
-            {/* 파일 크기 (12px #73726E font-mono) */}
-            <span className="mt-0.5 text-center text-xs text-[#73726E] font-mono">
+            {/* 파일 크기 (13px #73726E font-mono) */}
+            <span className="mt-0.5 text-center text-[13px] text-[#73726E] font-mono">
               {item.isDirectory ? '폴더' : item.sizeFormatted}
             </span>
           </div>

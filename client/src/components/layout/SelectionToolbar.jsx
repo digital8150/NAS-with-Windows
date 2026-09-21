@@ -21,7 +21,7 @@ export default function SelectionToolbar({ onRename, onDelete }) {
   };
 
   return (
-    <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-2xl border border-[#E9E9E7] bg-white px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 select-none text-sm font-medium">
+    <div className="fixed bottom-12 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2.5 rounded-2xl border border-[#E9E9E7] bg-white px-5 py-3 shadow-2xl animate-in fade-in slide-in-from-bottom-3 duration-200 select-none text-[15px] font-medium">
       <span className="font-semibold text-[#191919] pr-3 border-r border-[#E9E9E7]">
         {count}개 선택됨
       </span>

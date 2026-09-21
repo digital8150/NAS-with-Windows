@@ -16,26 +16,26 @@ export default function DriveSelector() {
           <button
             key={drive.id}
             onClick={() => selectDrive(drive)}
-            className={`group relative flex min-w-[150px] flex-col rounded-xl border p-2.5 text-left transition shadow-xs ${
+            className={`group relative flex min-w-[165px] flex-col rounded-xl border p-3 text-left transition shadow-xs ${
               isSelected
                 ? 'border-[#7F6DF2] bg-[#F4F0F8]'
                 : 'border-[#E9E9E7] bg-white hover:border-[#C4C4C0] hover:bg-[#FAF9F7]'
             }`}
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5">
                 <HardDrive
                   className={`h-4 w-4 ${
                     isSelected ? 'text-[#7F6DF2]' : 'text-[#73726E] group-hover:text-[#37352F]'
                   }`}
                 />
-                <span className={`text-xs font-semibold ${isSelected ? 'text-[#7F6DF2]' : 'text-[#37352F]'}`}>
+                <span className={`text-sm font-semibold ${isSelected ? 'text-[#7F6DF2]' : 'text-[#37352F]'}`}>
                   {drive.id}: {drive.label ? `(${drive.label})` : ''}
                 </span>
               </div>
             </div>
 
-            <div className="mt-2">
+            <div className="mt-2.5">
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#E9E9E7]">
                 <div
                   className={`h-full transition-all duration-300 ${
@@ -50,7 +50,7 @@ export default function DriveSelector() {
               </div>
             </div>
 
-            <div className="mt-1.5 flex items-center justify-between text-[11px] text-[#73726E] font-mono">
+            <div className="mt-2 flex items-center justify-between text-[13px] text-[#73726E] font-mono">
               <span>{drive.freeFormatted} 남음</span>
               <span>{drive.totalFormatted}</span>
             </div>

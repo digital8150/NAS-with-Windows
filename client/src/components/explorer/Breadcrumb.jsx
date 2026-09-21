@@ -18,14 +18,14 @@ export default function Breadcrumb() {
   };
 
   return (
-    <nav className="flex items-center gap-2 text-sm text-[#73726E] select-none overflow-x-auto py-1 scrollbar-none">
+    <nav className="flex items-center gap-2 text-[15px] text-[#73726E] select-none overflow-x-auto py-1 scrollbar-none">
       <button
         onClick={navigateUp}
         disabled={!parentPath}
-        className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E9E9E7] bg-white text-[#73726E] hover:bg-[#F7F6F3] hover:text-[#37352F] transition disabled:opacity-30 disabled:hover:bg-white mr-1"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#E9E9E7] bg-white text-[#73726E] hover:bg-[#F7F6F3] hover:text-[#37352F] transition disabled:opacity-30 disabled:hover:bg-white mr-1"
         title="상위 폴더"
       >
-        <ArrowUp className="h-3.5 w-3.5" />
+        <ArrowUp className="h-4 w-4" />
       </button>
 
       <div className="flex items-center gap-2 font-medium">
@@ -39,7 +39,7 @@ export default function Breadcrumb() {
               <button
                 onClick={() => !isLast && navigateTo(targetPath)}
                 disabled={isLast}
-                className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 transition shrink-0 ${
+                className={`flex items-center gap-1.5 rounded-lg px-2 py-1 transition shrink-0 ${
                   isLast
                     ? 'text-[#191919] font-bold cursor-default'
                     : 'text-[#73726E] hover:text-[#7F6DF2]'

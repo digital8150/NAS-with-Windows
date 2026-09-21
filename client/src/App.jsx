@@ -185,7 +185,7 @@ function MainLayout() {
 
   if (authLoading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-[#F7F6F3] text-[#73726E] text-sm font-medium">
+      <div className="flex h-screen w-screen items-center justify-center bg-[#F7F6F3] text-[#73726E] text-[15px] font-medium">
         <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#7F6DF2] border-t-transparent mr-3" />
         저장소에 연결하는 중...
       </div>
@@ -234,13 +234,13 @@ function MainLayout() {
         </main>
 
         {/* 하단 상태 표시줄 (스크린샷 1:1) */}
-        <footer className="flex h-7 w-full items-center justify-between border-t border-[#E9E9E7] bg-white px-6 text-xs text-[#73726E] select-none shrink-0 font-mono">
-          <div className="flex items-center gap-2">
+        <footer className="flex h-8 w-full items-center justify-between border-t border-[#E9E9E7] bg-white px-7 text-[13px] text-[#73726E] select-none shrink-0 font-mono">
+          <div className="flex items-center gap-2.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-sans">연결됨 · {user?.role || 'admin'}</span>
+            <span className="font-sans text-[13px]">연결됨 · {user?.role || 'admin'}</span>
           </div>
           <div>
-            <span>{folderCount}개 폴더, {fileCount}개 파일</span>
+            <span className="text-[13px]">{folderCount}개 폴더, {fileCount}개 파일</span>
           </div>
         </footer>
       </div>

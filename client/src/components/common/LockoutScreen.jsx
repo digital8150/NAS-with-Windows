@@ -13,20 +13,20 @@ export default function LockoutScreen({ remainingSeconds }) {
           <ShieldAlert className="h-7 w-7" />
         </div>
 
-        <h2 className="text-lg font-bold text-[#191919]">
+        <h2 className="text-xl font-bold text-[#191919]">
           로그인이 일시적으로 제한되었습니다
         </h2>
 
-        <p className="mt-2 text-sm text-[#73726E] leading-relaxed">
+        <p className="mt-2 text-[15px] text-[#73726E] leading-relaxed">
           연속된 비밀번호 오류로 인해 시스템이 일시 보호 중입니다.
         </p>
 
         <div className="mt-6 rounded-xl border border-[#E9E9E7] bg-[#FAF9F7] py-4">
-          <div className="flex items-center justify-center gap-2 text-[#73726E] text-xs font-medium">
+          <div className="flex items-center justify-center gap-2 text-[#73726E] text-sm font-medium">
             <Clock className="h-4 w-4 text-[#9B9A97]" />
             <span>재시도 가능까지 남은 시간</span>
           </div>
-          <div className="mt-2 text-2xl font-bold tracking-wider text-[#191919] font-mono">
+          <div className="mt-2 text-3xl font-bold tracking-wider text-[#191919] font-mono">
             {formattedTime}
           </div>
         </div>
