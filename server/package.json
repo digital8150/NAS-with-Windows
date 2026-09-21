@@ -6,16 +6,25 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/phase1-test.js && node test/api-test.js"
+    "test": "node test/phase1-test.js && node test/phase2-test.js && node test/api-test.js"
   },
-  "keywords": ["nas", "express", "ffmpeg", "react", "windows"],
+  "keywords": [
+    "nas",
+    "express",
+    "ffmpeg",
+    "react",
+    "windows"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "chardet": "^2.2.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2"
+    "iconv-lite": "^0.7.3",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.4.0"
   }
 }

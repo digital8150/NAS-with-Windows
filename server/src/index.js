@@ -5,6 +5,8 @@ const config = require('./config');
 
 const authRoutes = require('./routes/auth');
 const driveRoutes = require('./routes/drives');
+const fileRoutes = require('./routes/files');
+const mediaRoutes = require('./routes/media');
 
 const app = express();
 
@@ -39,6 +41,19 @@ app.get('/api/health', (req, res) => {
 // API 라우트
 app.use('/api/auth', authRoutes);
 app.use('/api/drives', driveRoutes);
+app.use('/api/files', fileRoutes);
+app.use('/api/media', mediaRoutes);
+
+// PLAN.md 하위 호환 단축 엔드포인트 포워딩
+app.use('/api/upload', (req, res, next) => { req.url = '/upload'; fileRoutes(req, res, next); });
+app.use('/api/download', (req, res, next) => { req.url = '/download'; fileRoutes(req, res, next); });
+app.use('/api/mkdir', (req, res, next) => { req.url = '/mkdir'; fileRoutes(req, res, next); });
+app.use('/api/rename', (req, res, next) => { req.url = '/rename'; fileRoutes(req, res, next); });
+app.use('/api/delete', (req, res, next) => { req.url = '/delete'; fileRoutes(req, res, next); });
+
+app.use('/api/media-info', (req, res, next) => { req.url = '/info'; mediaRoutes(req, res, next); });
+app.use('/api/subtitle', (req, res, next) => { req.url = '/subtitle'; mediaRoutes(req, res, next); });
+app.use('/api/view', (req, res, next) => { req.url = '/view'; mediaRoutes(req, res, next); });
 
 // 404 핸들러
 app.use('/api/*', (req, res) => {

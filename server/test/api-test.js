@@ -98,8 +98,134 @@ async function runApiIntegrationTests() {
         assert.strictEqual(dataStatusAuth.user.role, 'admin');
         console.log('   ✅ PASS: Auth status reports authenticated: true');
 
-        // 8. Logout
-        console.log('\n8. Testing POST /api/auth/logout ...');
+        // --- Phase 2 API Tests ---
+        const fs = require('fs');
+        const path = require('path');
+        const { execSync } = require('child_process');
+        const testWorkspace = path.join(__dirname, 'api_workspace');
+        if (fs.existsSync(testWorkspace)) {
+            fs.rmSync(testWorkspace, { recursive: true, force: true });
+        }
+        fs.mkdirSync(testWorkspace, { recursive: true });
+
+        // A. Blacklist Protection on GET /api/files
+        console.log('\n8. Testing GET /api/files with Blacklisted path C:\\Windows (Should be 403) ...');
+        const resBlacklist = await fetch(`${BASE_URL}/api/files?path=C:\\Windows`, {
+            headers: { Cookie: sessionCookie }
+        });
+        assert.strictEqual(resBlacklist.status, 403);
+        const dataBlacklist = await resBlacklist.json();
+        assert.ok(dataBlacklist.message.includes('Protected System Resource'));
+        console.log('   ✅ PASS: Blacklisted path correctly returned 403');
+
+        // B. Create Folder via POST /api/mkdir
+        console.log('\n9. Testing POST /api/mkdir ...');
+        const resMkdir = await fetch(`${BASE_URL}/api/mkdir`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Cookie: sessionCookie
+            },
+            body: JSON.stringify({
+                path: testWorkspace,
+                folderName: 'Movies'
+            })
+        });
+        assert.strictEqual(resMkdir.status, 200);
+        const dataMkdir = await resMkdir.json();
+        assert.strictEqual(dataMkdir.success, true);
+        assert.ok(fs.existsSync(path.join(testWorkspace, 'Movies')));
+        console.log('   ✅ PASS: Folder created via API');
+
+        // C. Create and List Files via GET /api/files
+        const movieDir = path.join(testWorkspace, 'Movies');
+        const sampleVideo = path.join(movieDir, 'sample.mp4');
+        const sampleSmi = path.join(movieDir, 'sample.ko.smi');
+        // 1초 테스트 영상 생성
+        execSync(`ffmpeg -y -f lavfi -i testsrc=duration=1:size=160x120:rate=24 -f lavfi -i sine=frequency=440:duration=1 -c:v libx264 -c:a aac -b:a 64k "${sampleVideo}"`, { stdio: 'pipe' });
+        fs.writeFileSync(sampleSmi, '<SAMI><BODY><SYNC Start=500><P Class=KRCC>자막 테스트</BODY></SAMI>');
+
+        console.log('\n10. Testing GET /api/files for created directory ...');
+        const resListFiles = await fetch(`${BASE_URL}/api/files?path=${encodeURIComponent(movieDir)}`, {
+            headers: { Cookie: sessionCookie }
+        });
+        assert.strictEqual(resListFiles.status, 200);
+        const dataListFiles = await resListFiles.json();
+        assert.strictEqual(dataListFiles.success, true);
+        assert.strictEqual(dataListFiles.items.length, 2);
+        console.log(`   ✅ PASS: Directory listed with ${dataListFiles.items.length} items`);
+
+        // D. Probe Media via GET /api/media-info
+        console.log('\n11. Testing GET /api/media-info ...');
+        const resMediaInfo = await fetch(`${BASE_URL}/api/media-info?path=${encodeURIComponent(sampleVideo)}`, {
+            headers: { Cookie: sessionCookie }
+        });
+        assert.strictEqual(resMediaInfo.status, 200);
+        const dataMediaInfo = await resMediaInfo.json();
+        assert.strictEqual(dataMediaInfo.success, true);
+        assert.strictEqual(dataMediaInfo.media.videoStreams.length, 1);
+        assert.strictEqual(dataMediaInfo.media.subtitles.length, 1);
+        assert.strictEqual(dataMediaInfo.media.subtitles[0].filename, 'sample.ko.smi');
+        console.log('   ✅ PASS: ffprobe metadata and auto-matched external subtitle verified');
+
+        // E. Subtitle conversion via GET /api/subtitle
+        console.log('\n12. Testing GET /api/subtitle (SMI to SRT Conversion) ...');
+        const resSubtitle = await fetch(`${BASE_URL}/api/subtitle?path=${encodeURIComponent(sampleSmi)}`, {
+            headers: { Cookie: sessionCookie }
+        });
+        assert.strictEqual(resSubtitle.status, 200);
+        const srtText = await resSubtitle.text();
+        assert.ok(srtText.includes('00:00:00,500 -->'));
+        assert.ok(srtText.includes('자막 테스트'));
+        console.log('   ✅ PASS: SAMI automatically converted to SRT via API');
+
+        // F. Video HTTP 206 Range Streaming via GET /api/view
+        console.log('\n13. Testing GET /api/view (HTTP 206 Range Streaming) ...');
+        const resStream = await fetch(`${BASE_URL}/api/view?path=${encodeURIComponent(sampleVideo)}`, {
+            headers: {
+                Cookie: sessionCookie,
+                Range: 'bytes=0-100'
+            }
+        });
+        assert.strictEqual(resStream.status, 206);
+        assert.strictEqual(resStream.headers.get('accept-ranges'), 'bytes');
+        assert.ok(resStream.headers.get('content-range').startsWith('bytes 0-100/'));
+        const chunk = await resStream.arrayBuffer();
+        assert.strictEqual(chunk.byteLength, 101);
+        console.log('   ✅ PASS: HTTP 206 Range streaming header and chunk length verified');
+
+        // G. File Download via GET /api/download
+        console.log('\n14. Testing GET /api/download ...');
+        const resDownload = await fetch(`${BASE_URL}/api/download?path=${encodeURIComponent(sampleVideo)}`, {
+            headers: { Cookie: sessionCookie }
+        });
+        assert.strictEqual(resDownload.status, 200);
+        assert.ok(resDownload.headers.get('content-disposition').includes('sample.mp4'));
+        console.log('   ✅ PASS: File download response header verified');
+
+        // H. Delete items via POST /api/delete
+        console.log('\n15. Testing POST /api/delete ...');
+        const resDelete = await fetch(`${BASE_URL}/api/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Cookie: sessionCookie
+            },
+            body: JSON.stringify({
+                paths: [sampleVideo, sampleSmi]
+            })
+        });
+        assert.strictEqual(resDelete.status, 200);
+        const dataDelete = await resDelete.json();
+        assert.strictEqual(dataDelete.deleted.length, 2);
+        assert.strictEqual(fs.existsSync(sampleVideo), false);
+        console.log('   ✅ PASS: File deletion via API verified');
+
+        // Cleanup workspace
+        try { fs.rmSync(testWorkspace, { recursive: true, force: true }); } catch {}
+
+        // 16. Logout
+        console.log('\n16. Testing POST /api/auth/logout ...');
         const resLogout = await fetch(`${BASE_URL}/api/auth/logout`, {
             method: 'POST',
             headers: { Cookie: sessionCookie }

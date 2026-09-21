@@ -292,10 +292,11 @@ client/src/
   - 시스템 파일 제외 및 Path Traversal 방어 미들웨어 (`pathSecurity.js`, `security.js`)
   - 브루트포스 차단(Rate Limit + 15분 Lockout) & HttpOnly 인증 (`rateLimiter.js`, `auth.js`)
   - 단위 및 E2E API 통합 테스트 스위트 검증 통과 (`phase1-test.js`, `api-test.js`)
-- [ ] **Phase 2: 파일 관리 & 스트리밍 엔진 이식**
-  - 파일 브라우징 / 업로드 / 다운로드 / 수정 / 삭제 API
-  - FFmpeg 실시간 리먹싱, 206 Range 스트리밍, ffprobe 분석
-  - `.smi` → `.srt` 실시간 파서 및 외부 자막 매칭 로직 탑재
+- [x] **Phase 2: 파일 관리 & 스트리밍 엔진 이식 (완료)**
+  - 파일 브라우징 / 업로드 / 다운로드 / 수정 / 삭제 API (`fileService.js`, `files.js`)
+  - FFmpeg 온더플라이 실시간 AAC 리먹싱, 206 Range 스트리밍, ffprobe 분석 (`mediaService.js`, `media.js`)
+  - `.smi` → `.srt` 실시간 파서(CP949/EUC-KR 자동 감지) 및 다국어 외부 자막 매칭 로직 탑재 (`subtitleService.js`)
+  - Phase 2 종합 테스트 스위트 및 E2E API 통합 검증 완료 (`phase2-test.js`, `api-test.js`)
 - [ ] **Phase 3: React + Tailwind CSS 프론트엔드 구축**
   - Vite + React + Tailwind CSS 환경 구성 (`client/`)
   - 탐색기 레이아웃: 사이드바, 드라이브 선택기, 브레드크럼, 파일 그리드/리스트
