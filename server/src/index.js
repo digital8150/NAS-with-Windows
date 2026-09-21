@@ -12,6 +12,9 @@ const mediaRoutes = require('./routes/media');
 
 const app = express();
 
+// Nginx 리버스 프록시 뒤에서 올바른 클라이언트 IP 식별 지원
+app.set('trust proxy', 1);
+
 // 기본 미들웨어
 app.use(cors({
     origin: (origin, callback) => {

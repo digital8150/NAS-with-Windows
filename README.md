@@ -60,10 +60,32 @@ NAS-with-windows/
 │   │   └── index.js
 │   └── package.json
 │
+├── tray/                       # Windows 시스템 트레이 애플리케이션 (.NET C#)
+│   ├── ReelDriveTray.cs        # 트레이 소스 코드 (Nginx & Node 백그라운드 제어/헬스체크)
+│   ├── ReelDriveTray.exe       # 단일 실행 파일 (초경량 15KB)
+│   └── build.bat               # 빌드 스크립트
+│
 ├── .gitignore
 ├── README.md                   # 프로젝트 개요 및 빠른 시작 가이드
 └── PLAN.md                     # 상세 아키텍처 설계서 및 구현 로드맵
 ```
+
+---
+
+## 🖥️ Windows 시스템 트레이 & 자동 시작
+
+- **시스템 트레이 상주**: 작업표시줄 알림 영역에 ReelDrive 보라색 아이콘 상주.
+  - **더블클릭**: 기본 웹 브라우저에서 `https://pc.codingbot.kr` 즉시 열기.
+  - **우클릭 메뉴**: 웹 저장소 열기, 로컬 주소 열기, 실시간 작동 상태 확인, 서버 재시작, 서버 일시 중지, Windows 시작 시 자동 실행 토글, 저장소 폴더 열기, 종료.
+- **부팅 시 자동 시작**: Windows 시작프로그램 레지스트리에 자동 등록되어 PC 재부팅 후에도 Nginx 및 백엔드 서버가 백그라운드에서 자동으로 기동됩니다.
+
+---
+
+## 🔒 SSL/HTTPS 보안 연결 (Let's Encrypt)
+
+- **도메인**: `https://pc.codingbot.kr` (정식 공인 SSL 인증서 적용)
+- **HTTP -> HTTPS 자동 전환**: 포트 80으로 들어오는 모든 웹 요청을 443(HTTPS)으로 자동 301 리다이렉트.
+- **인증서 자동 갱신 스크립트**: [`renew-ssl.bat`](renew-ssl.bat) 실행 시 간편 갱신 및 Nginx 자동 반영.
 
 ---
 
