@@ -46,16 +46,23 @@ app.use('/api/drives', driveRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/media', mediaRoutes);
 
-// PLAN.md 하위 호환 단축 엔드포인트 포워딩
-app.use('/api/upload', (req, res, next) => { req.url = '/upload'; fileRoutes(req, res, next); });
-app.use('/api/download', (req, res, next) => { req.url = '/download'; fileRoutes(req, res, next); });
-app.use('/api/mkdir', (req, res, next) => { req.url = '/mkdir'; fileRoutes(req, res, next); });
-app.use('/api/rename', (req, res, next) => { req.url = '/rename'; fileRoutes(req, res, next); });
-app.use('/api/delete', (req, res, next) => { req.url = '/delete'; fileRoutes(req, res, next); });
+// PLAN.md 하위 호환 단축 엔드포인트 포워딩 (쿼리 파라미터 보존)
+const forwardWithQuery = (targetPath, routerInstance) => (req, res, next) => {
+    const queryIndex = req.url.indexOf('?');
+    const queryString = queryIndex !== -1 ? req.url.slice(queryIndex) : '';
+    req.url = targetPath + queryString;
+    routerInstance(req, res, next);
+};
 
-app.use('/api/media-info', (req, res, next) => { req.url = '/info'; mediaRoutes(req, res, next); });
-app.use('/api/subtitle', (req, res, next) => { req.url = '/subtitle'; mediaRoutes(req, res, next); });
-app.use('/api/view', (req, res, next) => { req.url = '/view'; mediaRoutes(req, res, next); });
+app.use('/api/upload', forwardWithQuery('/upload', fileRoutes));
+app.use('/api/download', forwardWithQuery('/download', fileRoutes));
+app.use('/api/mkdir', forwardWithQuery('/mkdir', fileRoutes));
+app.use('/api/rename', forwardWithQuery('/rename', fileRoutes));
+app.use('/api/delete', forwardWithQuery('/delete', fileRoutes));
+
+app.use('/api/media-info', forwardWithQuery('/info', mediaRoutes));
+app.use('/api/subtitle', forwardWithQuery('/subtitle', mediaRoutes));
+app.use('/api/view', forwardWithQuery('/view', mediaRoutes));
 
 // 404 핸들러 (API 전용)
 app.use('/api/*', (req, res) => {
