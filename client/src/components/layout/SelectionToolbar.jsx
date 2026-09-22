@@ -1,9 +1,9 @@
 import React from 'react';
-import { Download, Edit3, Trash2, X, Eye } from 'lucide-react';
+import { Download, Edit3, Trash2, X, Eye, Share2 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 import { getDownloadUrl } from '../../services/api';
 
-export default function SelectionToolbar({ onRename, onDelete, onPreview }) {
+export default function SelectionToolbar({ onRename, onDelete, onPreview, onShare }) {
   const { selectedPaths, clearSelection, items } = useExplorer();
 
   if (selectedPaths.size === 0) return null;
@@ -53,6 +53,16 @@ export default function SelectionToolbar({ onRename, onDelete, onPreview }) {
         >
           <Edit3 className="h-4 w-4 text-[#73726E]" />
           <span>이름 변경</span>
+        </button>
+      )}
+
+      {isSingle && singleItem && singleItem.isDirectory && onShare && (
+        <button
+          onClick={() => onShare(singleItem)}
+          className="flex items-center gap-2 rounded-xl px-3 py-1.5 text-[#37352F] transition hover:bg-[#F7F6F3] hover:text-[#7F6DF2]"
+        >
+          <Share2 className="h-4 w-4 text-[#73726E]" />
+          <span>공유</span>
         </button>
       )}
 

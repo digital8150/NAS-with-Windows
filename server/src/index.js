@@ -9,6 +9,7 @@ const authRoutes = require('./routes/auth');
 const driveRoutes = require('./routes/drives');
 const fileRoutes = require('./routes/files');
 const mediaRoutes = require('./routes/media');
+const shareRoutes = require('./routes/shares');
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/drives', driveRoutes);
 app.use('/api/files', fileRoutes);
 app.use('/api/media', mediaRoutes);
+app.use('/api/shares', shareRoutes);
 
 // PLAN.md 하위 호환 단축 엔드포인트 포워딩 (쿼리 파라미터 보존)
 const forwardWithQuery = (targetPath, routerInstance) => (req, res, next) => {

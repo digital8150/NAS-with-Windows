@@ -7,7 +7,8 @@ import {
   Download,
   Monitor,
   LogOut,
-  PlayCircle
+  PlayCircle,
+  Share2
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,7 +22,7 @@ const LIB_ICONS = {
   desktop: Monitor
 };
 
-export default function Sidebar() {
+export default function Sidebar({ onOpenManageShares }) {
   const {
     drives,
     libraries,
@@ -112,6 +113,22 @@ export default function Sidebar() {
             })}
           </div>
         </div>
+
+        {/* 4. 공유 링크 관리 바로가기 */}
+        {onOpenManageShares && (
+          <div>
+            <div className="px-3 text-[13px] font-semibold text-[#8e8e93] mb-2 tracking-wide">
+              공유
+            </div>
+            <button
+              onClick={onOpenManageShares}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium text-[#d4d4d8] hover:bg-[#232328] hover:text-white transition"
+            >
+              <Share2 className="h-4 w-4 shrink-0 text-[#a1a1aa]" />
+              <span>공유 링크 관리</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 4. 하단 저장공간 위젯 */}

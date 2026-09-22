@@ -27,7 +27,7 @@ export default function AudioPlayerCard({ item }) {
   const [isMuted, setIsMuted] = useState(false);
   const [isLooping, setIsLooping] = useState(false);
 
-  const audioUrl = getViewStreamUrl(item.path);
+  const audioUrl = item.streamUrl || item.downloadUrl || getViewStreamUrl(item.path);
 
   useEffect(() => {
     const audio = audioRef.current;

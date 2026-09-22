@@ -39,7 +39,7 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
   const hasMultiple = allImages.length > 1;
 
   // 특수 포맷(RAW/PSD/AI 등)은 프리뷰 변환 URL 사용, 일반 이미지는 다운로드 URL 사용
-  const imageUrl = isSpecialImage ? getPreviewImageUrl(item.path) : getDownloadUrl(item.path);
+  const imageUrl = item.previewUrl || (isSpecialImage ? getPreviewImageUrl(item.path) : (item.downloadUrl || getDownloadUrl(item.path)));
 
   // 이미지 바뀔 때 상태 리셋
   useEffect(() => {

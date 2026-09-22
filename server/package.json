@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "node test/phase1-test.js && node test/phase2-test.js && node test/preview-enhancement-test.js && node test/api-test.js"
+    "test": "node test/phase1-test.js && node test/phase2-test.js && node test/preview-enhancement-test.js && node test/api-test.js && node test/share-test.js"
   },
   "keywords": [
     "nas",

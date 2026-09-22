@@ -109,8 +109,72 @@ export async function deleteItems(paths) {
   return data;
 }
 
-export function getDownloadUrl(filePath) {
-  return `${BASE_URL}/api/download?path=${encodeURIComponent(filePath)}`;
+export function getDownloadUrl(filePathOrItem) {
+  if (typeof filePathOrItem === 'object' && filePathOrItem !== null) {
+    if (filePathOrItem.downloadUrl) return filePathOrItem.downloadUrl;
+    filePathOrItem = filePathOrItem.path;
+  }
+  return `${BASE_URL}/api/download?path=${encodeURIComponent(filePathOrItem)}`;
+}
+
+// ----------------------------------------------------
+// Share API (관리자 전용)
+// ----------------------------------------------------
+export async function createShare(folderPath, expiresInDays = null) {
+  const res = await fetch(`${BASE_URL}/api/shares`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ folderPath, expiresInDays })
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || '공유 링크 생성에 실패했습니다.');
+  return data;
+}
+
+export async function getShares() {
+  const res = await fetch(`${BASE_URL}/api/shares`, { credentials: 'include' });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || '공유 목록을 불러오지 못했습니다.');
+  return data.shares || [];
+}
+
+export async function deleteShare(shareId) {
+  const res = await fetch(`${BASE_URL}/api/shares/${shareId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || '공유 해제에 실패했습니다.');
+  return data;
+}
+
+// ----------------------------------------------------
+// Public Share API (누구나 접근 가능 - 읽기 전용)
+// ----------------------------------------------------
+export async function getPublicShare(shareId, subpath = '') {
+  const query = subpath ? `?subpath=${encodeURIComponent(subpath)}` : '';
+  const res = await fetch(`${BASE_URL}/api/shares/public/${shareId}${query}`);
+  const data = await res.json();
+  if (!res.ok) {
+    const err = new Error(data.message || '공유된 폴더를 불러올 수 없습니다.');
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
+export function getPublicShareDownloadUrl(shareId, subpath) {
+  return `${BASE_URL}/api/shares/public/${shareId}/download?subpath=${encodeURIComponent(subpath)}`;
+}
+
+export function getPublicSharePreviewUrl(shareId, subpath) {
+  return `${BASE_URL}/api/shares/public/${shareId}/preview?subpath=${encodeURIComponent(subpath)}`;
+}
+
+export function getPublicShareStreamUrl(shareId, subpath) {
+  return `${BASE_URL}/api/shares/public/${shareId}/stream?subpath=${encodeURIComponent(subpath)}`;
 }
 
 export async function getMediaInfo(filePath) {

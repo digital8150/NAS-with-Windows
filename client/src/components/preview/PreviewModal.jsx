@@ -52,7 +52,7 @@ export default function PreviewModal({ item, allItems = [], onClose, onSelectIte
 
   if (!item) return null;
 
-  const downloadUrl = getDownloadUrl(item.path);
+  const downloadUrl = item.downloadUrl || getDownloadUrl(item.path);
 
   const handleDownload = (e) => {
     e.stopPropagation();

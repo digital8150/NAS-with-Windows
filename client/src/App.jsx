@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ExplorerProvider, useExplorer } from './contexts/ExplorerContext';
 import Sidebar from './components/layout/Sidebar';
@@ -15,6 +16,9 @@ import LockoutScreen from './components/common/LockoutScreen';
 import CustomDialog from './components/common/CustomDialog';
 import UploadToast from './components/common/UploadToast';
 import PreviewModal from './components/preview/PreviewModal';
+import ShareModal from './components/share/ShareModal';
+import ManageSharesModal from './components/share/ManageSharesModal';
+import SharedFolderView from './components/share/SharedFolderView';
 import {
   createFolder as apiCreateFolder,
   renameItem as apiRenameItem,
@@ -60,6 +64,14 @@ function MainLayout() {
     fileCount: 0
   });
   const [uploadAbortController, setUploadAbortController] = useState(null);
+
+  // 공유 모달 상태
+  const [shareModal, setShareModal] = useState({
+    isOpen: false,
+    folderPath: '',
+    folderName: ''
+  });
+  const [manageSharesOpen, setManageSharesOpen] = useState(false);
 
   // 드래그 앤 드롭 상태
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -224,7 +236,7 @@ function MainLayout() {
       className="relative flex h-screen w-screen overflow-hidden bg-[#F7F6F3] text-[#37352F]"
     >
       {/* 사이드바 (다크 톤) */}
-      <Sidebar />
+      <Sidebar onOpenManageShares={() => setManageSharesOpen(true)} />
 
       {/* 메인 탐색 영역 (웜 크림/화이트 톤) */}
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -280,6 +292,7 @@ function MainLayout() {
         onRename={handleOpenRename}
         onDelete={handleOpenDelete}
         onPreview={(item) => setPreviewItem(item)}
+        onShare={(item) => setShareModal({ isOpen: true, folderPath: item.path, folderName: item.name })}
       />
 
       {/* 파일 미리보기 모달 */}
@@ -291,6 +304,20 @@ function MainLayout() {
           onSelectItem={(item) => setPreviewItem(item)}
         />
       )}
+
+      {/* 폴더 공유 생성 모달 */}
+      <ShareModal
+        isOpen={shareModal.isOpen}
+        onClose={() => setShareModal((prev) => ({ ...prev, isOpen: false }))}
+        folderPath={shareModal.folderPath}
+        folderName={shareModal.folderName}
+      />
+
+      {/* 전체 공유 링크 관리 모달 */}
+      <ManageSharesModal
+        isOpen={manageSharesOpen}
+        onClose={() => setManageSharesOpen(false)}
+      />
 
       {/* 업로드 진행 토스트 */}
       <UploadToast
@@ -323,7 +350,11 @@ export default function App() {
   return (
     <AuthProvider>
       <ExplorerProvider>
-        <MainLayout />
+        <Routes>
+          <Route path="/share/:shareId/*" element={<SharedFolderView />} />
+          <Route path="/share/:shareId" element={<SharedFolderView />} />
+          <Route path="*" element={<MainLayout />} />
+        </Routes>
       </ExplorerProvider>
     </AuthProvider>
   );

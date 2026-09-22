@@ -1,20 +1,21 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import JSZip from 'jszip';
-import { ChevronLeft, ChevronRight, Presentation, Loader2, AlertCircle } from 'lucide-react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { PPTXViewer } from 'pptx-viewer';
+import { ChevronLeft, ChevronRight, Presentation, Loader2, AlertCircle, Maximize2 } from 'lucide-react';
 import { getDownloadUrl } from '../../../services/api';
 
 export default function PptxViewer({ item }) {
+  const containerRef = useRef(null);
+  const viewerRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [slides, setSlides] = useState([]);
-  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [slideInfo, setSlideInfo] = useState({ current: 0, total: 0 });
+
+  const docUrl = item.downloadUrl || getDownloadUrl(item.path);
 
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
     setError(null);
-
-    const docUrl = getDownloadUrl(item.path);
 
     fetch(docUrl, { credentials: 'include' })
       .then((res) => {
@@ -22,55 +23,48 @@ export default function PptxViewer({ item }) {
         return res.arrayBuffer();
       })
       .then(async (buffer) => {
-        if (!isMounted) return;
-        const zip = await JSZip.loadAsync(buffer);
+        if (!isMounted || !containerRef.current) return;
 
-        // 슬라이드 XML 파일들 탐색 (ppt/slides/slide1.xml, ppt/slides/slide2.xml ...)
-        const slideFileNames = Object.keys(zip.files).filter((name) =>
-          /^ppt\/slides\/slide\d+\.xml$/i.test(name)
-        );
+        // 기존 인스턴스 정리
+        if (viewerRef.current) {
+          try {
+            viewerRef.current.destroy();
+          } catch {
+            // 무시
+          }
+          viewerRef.current = null;
+        }
 
-        // 번호순으로 정렬
-        slideFileNames.sort((a, b) => {
-          const numA = parseInt(a.match(/slide(\d+)\.xml/i)[1], 10);
-          const numB = parseInt(b.match(/slide(\d+)\.xml/i)[1], 10);
-          return numA - numB;
+        containerRef.current.innerHTML = '';
+
+        const viewer = new PPTXViewer(containerRef.current, {
+          showControls: false,
+          keyboardNavigation: true
+        });
+        viewerRef.current = viewer;
+
+        viewer.on('slidechange', (index) => {
+          if (isMounted) {
+            setSlideInfo((prev) => ({ ...prev, current: index }));
+          }
         });
 
-        if (slideFileNames.length === 0) {
-          throw new Error('슬라이드 내용을 찾을 수 없습니다.');
-        }
-
-        const parsedSlides = [];
-        for (let i = 0; i < slideFileNames.length; i++) {
-          const fileName = slideFileNames[i];
-          const xmlText = await zip.file(fileName).async('string');
-
-          // 단락(<a:p>) 및 텍스트(<a:t>) 추출
-          const paragraphs = xmlText.split(/<a:p\b[^>]*>/i);
-          const slideTexts = [];
-
-          for (const p of paragraphs) {
-            const matches = p.match(/<a:t\b[^>]*>([\s\S]*?)<\/a:t>/gi) || [];
-            const text = matches
-              .map((m) => m.replace(/<[^>]+>/g, '').trim())
-              .filter(Boolean)
-              .join(' ');
-            if (text) {
-              slideTexts.push(text);
-            }
+        viewer.on('error', (err) => {
+          if (isMounted) {
+            setError(err?.message || '프레젠테이션을 렌더링하는 중 문제가 발생했습니다.');
+            setLoading(false);
           }
+        });
 
-          parsedSlides.push({
-            slideNumber: i + 1,
-            title: slideTexts[0] || `슬라이드 ${i + 1}`,
-            paragraphs: slideTexts.slice(1)
+        await viewer.load(buffer);
+
+        if (isMounted) {
+          setSlideInfo({
+            current: viewer.getCurrentSlide(),
+            total: viewer.getSlideCount()
           });
+          setLoading(false);
         }
-
-        setSlides(parsedSlides);
-        setCurrentSlideIndex(0);
-        setLoading(false);
       })
       .catch((err) => {
         if (!isMounted) return;
@@ -80,31 +74,34 @@ export default function PptxViewer({ item }) {
 
     return () => {
       isMounted = false;
+      if (viewerRef.current) {
+        try {
+          viewerRef.current.destroy();
+        } catch {
+          // 무시
+        }
+        viewerRef.current = null;
+      }
     };
-  }, [item.path]);
+  }, [docUrl]);
 
   const handlePrev = useCallback(() => {
-    setCurrentSlideIndex((prev) => Math.max(0, prev - 1));
+    if (viewerRef.current) {
+      viewerRef.current.previous();
+    }
   }, []);
 
   const handleNext = useCallback(() => {
-    setCurrentSlideIndex((prev) => Math.min(slides.length - 1, prev + 1));
-  }, [slides.length]);
+    if (viewerRef.current) {
+      viewerRef.current.next();
+    }
+  }, []);
 
-  // 키보드 방향키 슬라이드 넘김
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'ArrowLeft') {
-        handlePrev();
-      } else if (e.key === 'ArrowRight') {
-        handleNext();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handlePrev, handleNext]);
-
-  const currentSlide = slides[currentSlideIndex];
+  const handleToggleFullscreen = useCallback(() => {
+    if (viewerRef.current) {
+      viewerRef.current.toggleFullscreen();
+    }
+  }, []);
 
   return (
     <div className="flex flex-col w-full h-[76vh] rounded-2xl bg-[#16161a] border border-neutral-800 shadow-2xl overflow-hidden select-text">
@@ -113,20 +110,22 @@ export default function PptxViewer({ item }) {
         <div className="flex items-center gap-2 truncate">
           <Presentation className="h-4 w-4 text-orange-400 shrink-0" />
           <span className="font-semibold text-white truncate max-w-xs">{item.name}</span>
-          <span className="text-neutral-500 font-mono text-[12px] hidden sm:inline">
-            ({slides.length}개 슬라이드)
-          </span>
+          {slideInfo.total > 0 && (
+            <span className="text-neutral-500 font-mono text-[12px] hidden sm:inline">
+              ({slideInfo.total}개 슬라이드)
+            </span>
+          )}
         </div>
 
-        {slides.length > 0 && (
+        {slideInfo.total > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-[12px] font-mono text-neutral-400">
-              {currentSlideIndex + 1} / {slides.length}
+              {slideInfo.current + 1} / {slideInfo.total}
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={handlePrev}
-                disabled={currentSlideIndex <= 0}
+                disabled={slideInfo.current <= 0}
                 className="p-1 rounded-md text-neutral-400 hover:text-white hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent transition"
                 title="이전 슬라이드 (←)"
               >
@@ -134,21 +133,28 @@ export default function PptxViewer({ item }) {
               </button>
               <button
                 onClick={handleNext}
-                disabled={currentSlideIndex >= slides.length - 1}
+                disabled={slideInfo.current >= slideInfo.total - 1}
                 className="p-1 rounded-md text-neutral-400 hover:text-white hover:bg-neutral-800 disabled:opacity-30 disabled:hover:bg-transparent transition"
                 title="다음 슬라이드 (→)"
               >
                 <ChevronRight className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleToggleFullscreen}
+                className="p-1 ml-1 rounded-md text-neutral-400 hover:text-white hover:bg-neutral-800 transition"
+                title="전체화면"
+              >
+                <Maximize2 className="h-4 w-4" />
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* 2. 메인 슬라이드 카드 영역 */}
-      <div className="relative flex-1 overflow-auto p-4 sm:p-8 bg-[#111113] flex items-center justify-center">
+      {/* 2. 메인 슬라이드 렌더링 컨테이너 */}
+      <div className="relative flex-1 overflow-auto p-4 bg-[#111113] flex items-center justify-center">
         {loading && (
-          <div className="flex flex-col items-center justify-center text-neutral-300">
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#111113]/80 backdrop-blur-sm text-neutral-300 z-10">
             <Loader2 className="h-7 w-7 animate-spin text-orange-400 mb-2" />
             <span className="text-[14px] font-medium">프레젠테이션을 준비하는 중...</span>
           </div>
@@ -158,44 +164,14 @@ export default function PptxViewer({ item }) {
           <div className="flex flex-col items-center justify-center text-center p-6">
             <AlertCircle className="h-10 w-10 text-neutral-500 mb-3" />
             <p className="text-[14px] font-medium text-neutral-200 mb-1">{error}</p>
-            <p className="text-[12px] text-neutral-500">상단 다운로드 버튼으로 원본 파일을 확인해 주세요.</p>
+            <p className="text-[12px] text-neutral-500">상단 다운로드 버튼으로 원본 문서를 열람할 수 있습니다.</p>
           </div>
-        ) : currentSlide ? (
-          <div className="w-full max-w-3xl aspect-[16/10] bg-[#1a1a1e] border border-neutral-700/70 rounded-xl shadow-2xl p-6 sm:p-10 flex flex-col justify-between overflow-auto scrollbar-thin">
-            {/* 슬라이드 상단 번호 */}
-            <div className="flex items-center justify-between border-b border-neutral-700/60 pb-3 mb-6 select-none">
-              <span className="text-[12px] font-semibold tracking-wider text-orange-400 uppercase">
-                Slide {currentSlide.slideNumber}
-              </span>
-              <span className="text-[12px] text-neutral-500 font-mono">
-                {currentSlide.paragraphs.length}개 항목
-              </span>
-            </div>
-
-            {/* 슬라이드 제목 */}
-            <div className="mb-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-white leading-tight">
-                {currentSlide.title}
-              </h2>
-            </div>
-
-            {/* 슬라이드 본문 문단들 */}
-            <div className="flex-1 space-y-3 text-neutral-300 text-[14px] sm:text-[15px] leading-relaxed">
-              {currentSlide.paragraphs.length > 0 ? (
-                currentSlide.paragraphs.map((para, idx) => (
-                  <div key={idx} className="flex items-start gap-2.5">
-                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-orange-400 mt-2 shrink-0" />
-                    <p className="flex-1">{para}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-neutral-500 italic text-[13px]">
-                  (텍스트 본문이 없는 슬라이드입니다)
-                </p>
-              )}
-            </div>
-          </div>
-        ) : null}
+        ) : (
+          <div
+            ref={containerRef}
+            className="w-full h-full flex items-center justify-center overflow-hidden [&_.pptx-viewer]:w-full [&_.pptx-viewer]:h-full [&_.pptx-slide-container]:max-w-full [&_.pptx-slide-container]:max-h-full [&_svg]:max-h-[64vh] [&_svg]:max-w-full [&_svg]:shadow-2xl [&_svg]:rounded-lg"
+          />
+        )}
       </div>
     </div>
   );

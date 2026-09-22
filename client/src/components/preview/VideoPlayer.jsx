@@ -37,7 +37,7 @@ export default function VideoPlayer({ item }) {
 
       if (!isMounted || !containerRef.current) return;
 
-      const initialVideoUrl = getViewStreamUrl(item.path, null, 0, useRemux);
+      const initialVideoUrl = item.streamUrl || getViewStreamUrl(item.path, null, 0, useRemux);
 
       // 첫 번째 자막 결정
       const firstSub = availableSubtitles[0];

@@ -27,7 +27,7 @@ export default function ExcelViewer({ item }) {
     setLoading(true);
     setError(null);
 
-    const docUrl = getDownloadUrl(item.path);
+    const docUrl = item.downloadUrl || getDownloadUrl(item.path);
 
     fetch(docUrl, { credentials: 'include' })
       .then((res) => {

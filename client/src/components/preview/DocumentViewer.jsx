@@ -12,7 +12,7 @@ export default function DocumentViewer({ item }) {
 
   // 1. PDF
   if (ext === '.pdf') {
-    const downloadUrl = getDownloadUrl(item.path);
+    const downloadUrl = item.downloadUrl || getDownloadUrl(item.path);
     return (
       <div className="w-full h-[76vh] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-2xl">
         <iframe
@@ -26,7 +26,7 @@ export default function DocumentViewer({ item }) {
 
   // 2. AI (Adobe Illustrator - 내장 PDF 벡터 스트림 렌더링)
   if (ext === '.ai') {
-    const pdfUrl = getPdfViewUrl(item.path);
+    const pdfUrl = item.previewUrl || getPdfViewUrl(item.path);
     return (
       <div className="w-full h-[76vh] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-2xl">
         <iframe
@@ -73,7 +73,7 @@ function TextDocumentRenderer({ item, ext }) {
   const [wordWrap, setWordWrap] = useState(true);
 
   const isMarkdown = ext === '.md' || ext === '.markdown';
-  const downloadUrl = getDownloadUrl(item.path);
+  const downloadUrl = item.downloadUrl || getDownloadUrl(item.path);
 
   useEffect(() => {
     let isMounted = true;
