@@ -18,6 +18,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@ssabrojs/hwpxjs": "^0.4.0",
     "cfb": "^1.2.2",
     "chardet": "^2.2.0",
     "cookie-parser": "^1.4.7",

@@ -191,8 +191,9 @@ router.get('/view-pdf', async (req, res) => {
             return res.send(pdfBuffer);
         }
 
-        // 일반 PDF 파일은 파일 서빙
+        // 일반 PDF 파일은 인라인 브라우저 렌더링 서빙
         res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline; filename="' + encodeURIComponent(path.basename(safePath)) + '"');
         return fs.createReadStream(safePath).pipe(res);
     } catch (err) {
         return res.status(err.statusCode || 500).json({

@@ -288,6 +288,11 @@ async function getExifData(filePath) {
  * @param {string} filePath 
  * @returns {Promise<{ title: string, text: string, type: 'hwpx'|'hwp' }>}
  */
+/**
+ * HWP / HWPX 파일의 미리보기 HTML, 텍스트, 내장 이미지 추출
+ * @param {string} filePath 
+ * @returns {Promise<{ title: string, html?: string, text: string, previewImage?: string|null, type: 'hwpx'|'hwp' }>}
+ */
 async function parseHwpDocument(filePath) {
     const ext = path.extname(filePath).toLowerCase();
     const fileName = path.basename(filePath);
@@ -297,45 +302,85 @@ async function parseHwpDocument(filePath) {
         const fileBuffer = await fs.promises.readFile(filePath);
         const zip = await JSZip.loadAsync(fileBuffer);
 
-        // A. 내장 미리보기 텍스트(Preview/PrvText.txt) 확인
-        const prvTextEntry = zip.file('Preview/PrvText.txt') || zip.file('preview/prvtext.txt');
-        if (prvTextEntry) {
-            const rawPrvText = await prvTextEntry.async('string');
-            if (rawPrvText && rawPrvText.trim().length > 0) {
-                return {
-                    title: fileName,
-                    text: rawPrvText.trim(),
-                    type: 'hwpx'
-                };
-            }
-        }
+        let previewImage = null;
+        let html = null;
+        let extractedText = '';
 
-        // B. 본문 XML (Contents/section0.xml, section1.xml 등) 파싱
-        const sectionEntries = Object.keys(zip.files).filter(name => 
-            name.toLowerCase().startsWith('contents/section') && name.endsWith('.xml')
-        ).sort();
-
-        let fullText = '';
-        for (const secName of sectionEntries) {
-            const secXml = await zip.file(secName).async('string');
-            // <hp:t> 텍스트 태그 추출
-            const paragraphs = secXml.split(/<hp:p\b[^>]*>/i);
-            for (const p of paragraphs) {
-                const textMatches = p.match(/<hp:t\b[^>]*>([\s\S]*?)<\/hp:t>/gi) || [];
-                const pText = textMatches
-                    .map(m => m.replace(/<[^>]+>/g, ''))
-                    .join('')
-                    .trim();
-                if (pText) {
-                    fullText += pText + '\n\n';
+        // A. 내장 미리보기 래스터 이미지(Preview/PrvImage.png 등) 추출
+        const imgEntries = ['Preview/PrvImage.png', 'preview/prvimage.png', 'Preview/PrvImage.bmp', 'preview/prvimage.bmp', 'Preview/PrvImage.jpg', 'preview/prvimage.jpg'];
+        for (const entryName of imgEntries) {
+            const imgFile = zip.file(entryName);
+            if (imgFile) {
+                try {
+                    const imgBuf = await imgFile.async('nodebuffer');
+                    const mime = entryName.toLowerCase().endsWith('.png') ? 'image/png' : (entryName.toLowerCase().endsWith('.bmp') ? 'image/bmp' : 'image/jpeg');
+                    previewImage = `data:${mime};base64,${imgBuf.toString('base64')}`;
+                    break;
+                } catch {
+                    // 무시
                 }
             }
         }
 
-        if (fullText.trim().length > 0) {
+        // B. 내장 미리보기 텍스트(Preview/PrvText.txt) 확인
+        const prvTextEntry = zip.file('Preview/PrvText.txt') || zip.file('preview/prvtext.txt');
+        if (prvTextEntry) {
+            try {
+                const rawPrvText = await prvTextEntry.async('string');
+                if (rawPrvText && rawPrvText.trim().length > 0) {
+                    extractedText = rawPrvText.trim();
+                }
+            } catch {
+                // 무시
+            }
+        }
+
+        // C. @ssabrojs/hwpxjs를 활용한 풍부한 HTML 변환 (표, 서식, 인라인 이미지 보존)
+        try {
+            const { HwpxReader } = await import('@ssabrojs/hwpxjs');
+            const reader = new HwpxReader();
+            const ab = fileBuffer.buffer.slice(fileBuffer.byteOffset, fileBuffer.byteOffset + fileBuffer.byteLength);
+            await reader.loadFromArrayBuffer(ab);
+            html = await reader.extractHtml();
+            if (!extractedText) {
+                extractedText = await reader.extractText();
+            }
+        } catch {
+            // 엔진 파싱 실패 시 아래 내장 XML 파서로 fallback
+        }
+
+        // D. Fallback: 본문 XML (Contents/section0.xml 등) 정규식 추출
+        if (!extractedText || extractedText.trim().length === 0) {
+            const sectionEntries = Object.keys(zip.files).filter(name => 
+                name.toLowerCase().startsWith('contents/section') && name.endsWith('.xml')
+            ).sort();
+
+            let fullText = '';
+            for (const secName of sectionEntries) {
+                const secXml = await zip.file(secName).async('string');
+                const paragraphs = secXml.split(/<hp:p\b[^>]*>/i);
+                for (const p of paragraphs) {
+                    const textMatches = p.match(/<hp:t\b[^>]*>([\s\S]*?)<\/hp:t>/gi) || [];
+                    const pText = textMatches
+                        .map(m => m.replace(/<[^>]+>/g, ''))
+                        .join('')
+                        .trim();
+                    if (pText) {
+                        fullText += pText + '\n\n';
+                    }
+                }
+            }
+            if (fullText.trim().length > 0) {
+                extractedText = fullText.trim();
+            }
+        }
+
+        if (html || extractedText || previewImage) {
             return {
                 title: fileName,
-                text: fullText.trim(),
+                html: html || undefined,
+                text: extractedText || '',
+                previewImage: previewImage || null,
                 type: 'hwpx'
             };
         }
@@ -344,49 +389,87 @@ async function parseHwpDocument(filePath) {
     // 2. HWP (HWP 5.0 CFBF / OLE 바이너리)
     if (ext === '.hwp') {
         const fileBuffer = await fs.promises.readFile(filePath);
-        const cfb = CFB.read(fileBuffer, { type: 'buffer' });
+        let previewImage = null;
+        let html = null;
+        let extractedText = '';
 
-        // A. PrvText 스트림 탐색 (UTF-16LE 텍스트)
-        const prvTextEntry = cfb.FileIndex.find(f => f.name.toLowerCase() === 'prvtext');
-        if (prvTextEntry && prvTextEntry.content) {
-            const buf = Buffer.from(prvTextEntry.content);
-            const text = buf.toString('utf16le').replace(/\0/g, '').trim();
-            if (text.length > 0) {
-                return {
-                    title: fileName,
-                    text,
-                    type: 'hwp'
-                };
+        // A. CFB 읽기 및 PrvImage 스트림 확인
+        let cfb = null;
+        try {
+            cfb = CFB.read(fileBuffer, { type: 'buffer' });
+            const prvImgEntry = cfb.FileIndex.find(f => f.name.toLowerCase() === 'prvimage');
+            if (prvImgEntry && prvImgEntry.content) {
+                const buf = Buffer.from(prvImgEntry.content);
+                // PNG 매직 넘버 (0x89 0x50 0x4E 0x47) 또는 BMP (0x42 0x4D)
+                if (buf.length > 8) {
+                    const isPng = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47;
+                    const isBmp = buf[0] === 0x42 && buf[1] === 0x4D;
+                    const mime = isPng ? 'image/png' : (isBmp ? 'image/bmp' : 'image/jpeg');
+                    previewImage = `data:${mime};base64,${buf.toString('base64')}`;
+                }
+            }
+        } catch {
+            // CFB 파싱 실패 시 계속
+        }
+
+        // B. @ssabrojs/hwpxjs를 활용한 HWP 5.0 -> HWPX -> HTML 변환 시도
+        try {
+            const { hwpToHwpx, HwpxReader } = await import('@ssabrojs/hwpxjs');
+            const hwpxBytes = await hwpToHwpx(new Uint8Array(fileBuffer));
+            const reader = new HwpxReader();
+            const ab = hwpxBytes.buffer.slice(hwpxBytes.byteOffset, hwpxBytes.byteOffset + hwpxBytes.byteLength);
+            await reader.loadFromArrayBuffer(ab);
+            html = await reader.extractHtml();
+            extractedText = await reader.extractText();
+        } catch {
+            // 변환 실패 시 아래 PrvText / Section0 스트림 파서로 fallback
+        }
+
+        // C. Fallback: PrvText 스트림 탐색 (UTF-16LE 텍스트)
+        if (!extractedText && cfb) {
+            const prvTextEntry = cfb.FileIndex.find(f => f.name.toLowerCase() === 'prvtext');
+            if (prvTextEntry && prvTextEntry.content) {
+                const buf = Buffer.from(prvTextEntry.content);
+                const text = buf.toString('utf16le').replace(/\0/g, '').trim();
+                if (text.length > 0) {
+                    extractedText = text;
+                }
             }
         }
 
-        // B. BodyText/Section0 스트림 탐색 (zlib 압축 해제 후 텍스트 추출)
-        const section0 = cfb.FileIndex.find(f => 
-            f.name.toLowerCase().includes('section0')
-        );
+        // D. Fallback: BodyText/Section0 스트림 탐색 (zlib 압축 해제 후 텍스트 추출)
+        if (!extractedText && cfb) {
+            const section0 = cfb.FileIndex.find(f => 
+                f.name.toLowerCase().includes('section0')
+            );
 
-        if (section0 && section0.content) {
-            try {
-                const inflated = zlib.inflateRawSync(Buffer.from(section0.content));
-                // HWP 레코드 구조에서 UTF-16LE 텍스트 추출
-                const rawStr = inflated.toString('utf16le');
-                // 인쇄 가능한 문자들 위주로 필터링
-                const cleanText = rawStr
-                    .replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, ' ')
-                    .replace(/\s+/g, ' ')
-                    .replace(/([^\s]+)\s{2,}/g, '$1\n')
-                    .trim();
+            if (section0 && section0.content) {
+                try {
+                    const inflated = zlib.inflateRawSync(Buffer.from(section0.content));
+                    const rawStr = inflated.toString('utf16le');
+                    const cleanText = rawStr
+                        .replace(/[\x00-\x09\x0B-\x1F\x7F-\x9F]/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .replace(/([^\s]+)\s{2,}/g, '$1\n')
+                        .trim();
 
-                if (cleanText.length > 20) {
-                    return {
-                        title: fileName,
-                        text: cleanText,
-                        type: 'hwp'
-                    };
+                    if (cleanText.length > 20) {
+                        extractedText = cleanText;
+                    }
+                } catch {
+                    // 압축 해제 실패 시 계속
                 }
-            } catch {
-                // 압축 해제 실패 시 계속
             }
+        }
+
+        if (html || extractedText || previewImage) {
+            return {
+                title: fileName,
+                html: html || undefined,
+                text: extractedText || '',
+                previewImage: previewImage || null,
+                type: 'hwp'
+            };
         }
     }
 

@@ -13,7 +13,7 @@ const {
     listShareDirectory
 } = require('../services/shareService');
 const { probeMedia, streamRangeFile, streamRemuxVideo } = require('../services/mediaService');
-const { getPreviewImage, extractAiPdf } = require('../services/previewService');
+const { getPreviewImage, extractAiPdf, parseHwpDocument } = require('../services/previewService');
 const { loadAndConvertSubtitle, extractEmbeddedSubtitle } = require('../services/subtitleService');
 
 // ==========================================
@@ -122,6 +122,35 @@ router.get('/public/:id/preview', async (req, res) => {
         }
 
         return res.sendFile(targetPath);
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: err.name || 'Preview Error',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/shares/public/:id/document-preview
+ * 공유 폴더 내 한글(HWP, HWPX) 등 문서 미리보기 추출
+ */
+router.get('/public/:id/document-preview', async (req, res) => {
+    try {
+        const shareId = req.params.id;
+        const subpath = req.query.subpath;
+
+        if (!subpath) {
+            return res.status(400).json({ error: 'subpath parameter is required' });
+        }
+
+        const share = getShare(shareId);
+        const targetPath = validateShareSubpath(share, subpath);
+
+        const preview = await parseHwpDocument(targetPath);
+        return res.json({
+            success: true,
+            preview
+        });
     } catch (err) {
         return res.status(err.statusCode || 500).json({
             error: err.name || 'Preview Error',

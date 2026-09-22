@@ -12,11 +12,11 @@ export default function DocumentViewer({ item }) {
 
   // 1. PDF
   if (ext === '.pdf') {
-    const downloadUrl = item.downloadUrl || getDownloadUrl(item.path);
+    const pdfUrl = item.previewUrl || getPdfViewUrl(item.path);
     return (
       <div className="w-full h-[76vh] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-2xl">
         <iframe
-          src={downloadUrl}
+          src={pdfUrl}
           title={item.name}
           className="w-full h-full border-0"
         />

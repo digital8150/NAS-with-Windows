@@ -219,10 +219,18 @@ export async function getExif(filePath) {
   return data.exif || {};
 }
 
-export async function getDocumentPreview(filePath) {
-  const res = await fetch(`${BASE_URL}/api/media/document-preview?path=${encodeURIComponent(filePath)}`, {
-    credentials: 'include'
-  });
+export async function getDocumentPreview(filePathOrItem) {
+  let url;
+  if (typeof filePathOrItem === 'object' && filePathOrItem !== null) {
+    if (filePathOrItem.shareId && filePathOrItem.subpath) {
+      url = `${BASE_URL}/api/shares/public/${filePathOrItem.shareId}/document-preview?subpath=${encodeURIComponent(filePathOrItem.subpath)}`;
+    } else {
+      url = `${BASE_URL}/api/media/document-preview?path=${encodeURIComponent(filePathOrItem.path)}`;
+    }
+  } else {
+    url = `${BASE_URL}/api/media/document-preview?path=${encodeURIComponent(filePathOrItem)}`;
+  }
+  const res = await fetch(url, { credentials: 'include' });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || '문서 미리보기를 불러오지 못했습니다.');
   return data.preview || null;
