@@ -13,7 +13,7 @@ const {
     listShareDirectory
 } = require('../services/shareService');
 const { probeMedia, streamRangeFile, streamRemuxVideo } = require('../services/mediaService');
-const { getPreviewImage, extractAiPdf, parseHwpDocument } = require('../services/previewService');
+const { getPreviewImage, extractAiPdf, parseHwpDocument, getExifData } = require('../services/previewService');
 const { loadAndConvertSubtitle, extractEmbeddedSubtitle } = require('../services/subtitleService');
 
 // ==========================================
@@ -263,6 +263,40 @@ router.get('/public/:id/subtitle', async (req, res) => {
     } catch (err) {
         return res.status(err.statusCode || 500).json({
             error: err.name || 'Subtitle Error',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/shares/public/:id/exif
+ * 공유 폴더 내 이미지 파일의 상세 EXIF 메타데이터
+ */
+router.get('/public/:id/exif', async (req, res) => {
+    try {
+        const shareId = req.params.id;
+        const subpath = req.query.subpath;
+
+        if (!subpath) {
+            return res.status(400).json({ error: 'subpath parameter is required' });
+        }
+
+        const share = getShare(shareId);
+        const targetPath = validateShareSubpath(share, subpath);
+
+        if (!fs.existsSync(targetPath)) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        const exif = await getExifData(targetPath);
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        return res.json({
+            success: true,
+            exif
+        });
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: err.name || 'EXIF Error',
             message: err.message
         });
     }

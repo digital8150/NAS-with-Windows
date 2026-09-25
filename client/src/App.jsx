@@ -99,6 +99,7 @@ function MainLayout() {
     folderName: ''
   });
   const [manageSharesOpen, setManageSharesOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // 드래그 앤 드롭 상태
   const [isDraggingOver, setIsDraggingOver] = useState(false);
@@ -262,19 +263,24 @@ function MainLayout() {
       onDrop={handleDrop}
       className="relative flex h-screen w-screen overflow-hidden bg-[#F7F6F3] text-[#37352F]"
     >
-      {/* 사이드바 (다크 톤) */}
-      <Sidebar onOpenManageShares={() => setManageSharesOpen(true)} />
+      {/* 사이드바 (다크 톤 - 모바일 드로어 지원) */}
+      <Sidebar
+        isMobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        onOpenManageShares={() => setManageSharesOpen(true)}
+      />
 
       {/* 메인 탐색 영역 (웜 크림/화이트 톤) */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* 상단 화이트 헤더 */}
         <Header
+          onOpenSidebar={() => setMobileSidebarOpen(true)}
           onNewFolder={handleOpenNewFolder}
           onUploadFiles={handleUploadFiles}
         />
 
         {/* 경로 및 드라이브 내비게이션 바 */}
-        <div className="px-7 pt-4 pb-2 space-y-2.5">
+        <div className="px-3.5 sm:px-7 pt-3 sm:pt-4 pb-2 space-y-2 sm:space-y-2.5 shrink-0">
           <DriveSelector />
           <div className="flex items-center justify-between gap-3 flex-wrap">
             <Breadcrumb />
@@ -285,7 +291,7 @@ function MainLayout() {
         {/* 메인 파일 뷰 */}
         <main
           ref={fileViewRef}
-          className={`flex-1 overflow-y-auto px-7 scrollbar-thin transition-[padding-bottom] duration-200 ${
+          className={`flex-1 overflow-y-auto px-3.5 sm:px-7 scrollbar-thin transition-[padding-bottom] duration-200 ${
             selectedPaths.size > 0 ? 'pb-32' : 'pb-6'
           }`}
         >
@@ -297,13 +303,13 @@ function MainLayout() {
         </main>
 
         {/* 하단 상태 표시줄 (스크린샷 1:1) */}
-        <footer className="flex h-8 w-full items-center justify-between border-t border-[#E9E9E7] bg-white px-7 text-[13px] text-[#73726E] select-none shrink-0 font-mono">
-          <div className="flex items-center gap-2.5">
+        <footer className="flex h-8 w-full items-center justify-between border-t border-[#E9E9E7] bg-white px-3.5 sm:px-7 text-[12px] sm:text-[13px] text-[#73726E] select-none shrink-0 font-mono">
+          <div className="flex items-center gap-2 sm:gap-2.5">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-sans text-[13px]">연결됨 · {user?.role || 'admin'}</span>
+            <span className="font-sans text-[12px] sm:text-[13px]">연결됨 · {user?.role || 'admin'}</span>
           </div>
           <div>
-            <span className="text-[13px]">{folderCount}개 폴더, {fileCount}개 파일</span>
+            <span className="text-[12px] sm:text-[13px]">{folderCount}개 폴더, {fileCount}개 파일</span>
           </div>
         </footer>
       </div>
@@ -382,13 +388,18 @@ function MainLayout() {
 export default function App() {
   return (
     <AuthProvider>
-      <ExplorerProvider>
-        <Routes>
-          <Route path="/share/:shareId/*" element={<SharedFolderView />} />
-          <Route path="/share/:shareId" element={<SharedFolderView />} />
-          <Route path="*" element={<MainLayout />} />
-        </Routes>
-      </ExplorerProvider>
+      <Routes>
+        <Route path="/share/:shareId/*" element={<SharedFolderView />} />
+        <Route path="/share/:shareId" element={<SharedFolderView />} />
+        <Route
+          path="*"
+          element={
+            <ExplorerProvider>
+              <MainLayout />
+            </ExplorerProvider>
+          }
+        />
+      </Routes>
     </AuthProvider>
   );
 }

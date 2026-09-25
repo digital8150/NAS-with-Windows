@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -30,12 +30,24 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
   const [loadingExif, setLoadingExif] = useState(false);
 
   const containerRef = useRef(null);
+  const touchStartRef = useRef(null);
+  const touchDeltaRef = useRef(0);
 
   const ext = item.ext?.toLowerCase() || '';
   const isSpecialImage = RAW_EXTS.includes(ext);
 
-  // 현재 이미지의 인덱스 확인
-  const currentIndex = allImages.findIndex((img) => img.path === item.path);
+  // 고유 키 기반 현재 이미지 인덱스 확인 (path 또는 subpath 모두 지원)
+  const getItemKey = useCallback((img) => {
+    if (!img) return '';
+    return img.path || img.subpath || img.name || '';
+  }, []);
+
+  const currentKey = getItemKey(item);
+  const currentIndex = useMemo(() => {
+    if (!allImages || allImages.length === 0) return -1;
+    return allImages.findIndex((img) => getItemKey(img) === currentKey);
+  }, [allImages, currentKey, getItemKey]);
+
   const hasMultiple = allImages.length > 1;
 
   // 특수 포맷(RAW/PSD/AI 등)은 프리뷰 변환 URL 사용, 일반 이미지는 다운로드 URL 사용
@@ -49,7 +61,7 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
     setLoading(true);
     setImageError(false);
     setExifData(null);
-  }, [item.path]);
+  }, [currentKey]);
 
   // EXIF 데이터 불러오기
   useEffect(() => {
@@ -58,7 +70,7 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
     let isMounted = true;
     setLoadingExif(true);
 
-    getExif(item.path)
+    getExif(item)
       .then((data) => {
         if (!isMounted) return;
         setExifData(data);
@@ -73,7 +85,7 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
     return () => {
       isMounted = false;
     };
-  }, [showExif, item.path, exifData]);
+  }, [showExif, currentKey, exifData, item]);
 
   // 이미지 전환 핸들러
   const handlePrev = useCallback(() => {
@@ -83,10 +95,40 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
   }, [currentIndex, allImages, onSelectImage]);
 
   const handleNext = useCallback(() => {
-    if (currentIndex < allImages.length - 1) {
+    if (currentIndex >= 0 && currentIndex < allImages.length - 1) {
       onSelectImage(allImages[currentIndex + 1]);
     }
   }, [currentIndex, allImages, onSelectImage]);
+
+  // 모바일 터치 스와이프 탐색 (확대되지 않은 상태일 때만 동작)
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1 && scale <= 1) {
+      touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      touchDeltaRef.current = 0;
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (!touchStartRef.current || scale > 1 || e.touches.length !== 1) return;
+    const diffX = e.touches[0].clientX - touchStartRef.current.x;
+    const diffY = e.touches[0].clientY - touchStartRef.current.y;
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      touchDeltaRef.current = diffX;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStartRef.current) return;
+    const delta = touchDeltaRef.current;
+    touchStartRef.current = null;
+    touchDeltaRef.current = 0;
+
+    if (delta > 45) {
+      handlePrev();
+    } else if (delta < -45) {
+      handleNext();
+    }
+  };
 
   // 키보드 좌우 화살표 탐색
   useEffect(() => {
@@ -159,7 +201,10 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        className={`relative flex items-center justify-center w-full h-[66vh] overflow-hidden rounded-2xl bg-[#111113] border border-neutral-800/80 ${
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className={`relative flex items-center justify-center w-full h-[55vh] sm:h-[66vh] overflow-hidden rounded-2xl bg-[#111113] border border-neutral-800/80 touch-pan-y ${
           scale > 1 ? (isDragging ? 'cursor-grabbing' : 'cursor-grab') : 'cursor-default'
         }`}
       >
@@ -197,31 +242,37 @@ export default function ImageViewer({ item, allImages = [], onSelectImage }) {
               transform: `translate(${position.x}px, ${position.y}px) scale(${scale}) rotate(${rotation}deg)`,
               transition: isDragging ? 'none' : 'transform 0.12s ease-out'
             }}
-            className="max-h-full max-w-full object-contain pointer-events-none drop-shadow-md"
+            className="max-h-full max-w-full object-contain pointer-events-none drop-shadow-md select-none"
           />
         )}
 
         {/* 이전 버튼 */}
         {hasMultiple && (
           <button
-            onClick={handlePrev}
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrev();
+            }}
             disabled={currentIndex <= 0}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 disabled:opacity-20 disabled:cursor-not-allowed"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 active:scale-90 disabled:opacity-20 disabled:cursor-not-allowed"
             title="이전 사진 (←)"
           >
-            <ChevronLeft className="h-6 w-6" />
+            <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         )}
 
         {/* 다음 버튼 */}
         {hasMultiple && (
           <button
-            onClick={handleNext}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleNext();
+            }}
             disabled={currentIndex >= allImages.length - 1}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 disabled:opacity-20 disabled:cursor-not-allowed"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 active:scale-90 disabled:opacity-20 disabled:cursor-not-allowed"
             title="다음 사진 (→)"
           >
-            <ChevronRight className="h-6 w-6" />
+            <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
         )}
 

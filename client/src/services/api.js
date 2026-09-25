@@ -215,10 +215,18 @@ export function getPdfViewUrl(filePath) {
   return `${BASE_URL}/api/media/view-pdf?path=${encodeURIComponent(filePath)}`;
 }
 
-export async function getExif(filePath) {
-  const res = await fetch(`${BASE_URL}/api/media/exif?path=${encodeURIComponent(filePath)}`, {
-    credentials: 'include'
-  });
+export async function getExif(filePathOrItem) {
+  let url;
+  if (typeof filePathOrItem === 'object' && filePathOrItem !== null) {
+    if (filePathOrItem.shareId && filePathOrItem.subpath) {
+      url = `${BASE_URL}/api/shares/public/${filePathOrItem.shareId}/exif?subpath=${encodeURIComponent(filePathOrItem.subpath)}`;
+    } else {
+      url = `${BASE_URL}/api/media/exif?path=${encodeURIComponent(filePathOrItem.path)}`;
+    }
+  } else {
+    url = `${BASE_URL}/api/media/exif?path=${encodeURIComponent(filePathOrItem)}`;
+  }
+  const res = await fetch(url, { credentials: 'include' });
   const data = await res.json();
   if (!res.ok) throw new Error(data.message || '사진 정보를 불러오지 못했습니다.');
   return data.exif || {};

@@ -64,11 +64,23 @@ const GridItem = React.memo(function GridItem({
   onItemClick,
   onItemDoubleClick
 }) {
+  const lastTapRef = React.useRef(0);
+
+  const handleTouchEnd = (e) => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 320) {
+      e.preventDefault();
+      onItemDoubleClick(item);
+    }
+    lastTapRef.current = now;
+  };
+
   return (
     <div
       onClick={(event) => onItemClick(event, item)}
       onDoubleClick={() => onItemDoubleClick(item)}
-      className={`file-grid-item group relative flex flex-col rounded-2xl border bg-white p-4 transition-[border-color,box-shadow] duration-150 cursor-pointer shadow-xs ${
+      onTouchEnd={handleTouchEnd}
+      className={`file-grid-item group relative flex flex-col rounded-2xl border bg-white p-3 sm:p-4 transition-[border-color,box-shadow] duration-150 cursor-pointer shadow-xs ${
         isSelected
           ? 'border-2 border-[#7F6DF2] shadow-md ring-2 ring-[#7F6DF2]/20'
           : 'border-[#E9E9E7] hover:border-[#C4C4C0] hover:shadow-md'
@@ -76,12 +88,12 @@ const GridItem = React.memo(function GridItem({
     >
       <FileThumbnail item={item} iconSize={iconSize} />
       <span
-        className="mt-3 truncate text-center text-[15px] font-medium text-[#37352F] group-hover:text-[#191919]"
+        className="mt-2.5 sm:mt-3 truncate text-center text-[13px] sm:text-[15px] font-medium text-[#37352F] group-hover:text-[#191919]"
         title={item.name}
       >
         {item.name}
       </span>
-      <span className="mt-0.5 text-center text-[13px] text-[#73726E] font-mono">
+      <span className="mt-0.5 text-center text-[11px] sm:text-[13px] text-[#73726E] font-mono">
         {item.isDirectory ? '폴더' : item.sizeFormatted}
       </span>
     </div>

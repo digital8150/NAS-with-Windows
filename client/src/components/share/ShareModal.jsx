@@ -90,7 +90,7 @@ export default function ShareModal({ isOpen, onClose, folderPath, folderName }) 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-150 select-none">
-      <div className="w-full max-w-md rounded-2xl border border-[#E9E9E7] bg-white p-6 shadow-2xl animate-in zoom-in-95 duration-150 dark:border-neutral-800 dark:bg-[#1c1c20] text-[#191919] dark:text-white">
+      <div className="w-full max-w-md rounded-2xl border border-[#E9E9E7] bg-white p-4 sm:p-6 shadow-2xl animate-in zoom-in-95 duration-150 dark:border-neutral-800 dark:bg-[#1c1c20] text-[#191919] dark:text-white">
         {/* 헤더 */}
         <div className="flex items-center justify-between pb-4 border-b border-[#E9E9E7] dark:border-neutral-800">
           <div className="flex items-center gap-2.5">

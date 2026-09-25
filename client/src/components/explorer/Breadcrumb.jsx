@@ -30,7 +30,7 @@ export default function Breadcrumb() {
   }
 
   return (
-    <nav className="flex items-center gap-2 text-[15px] text-[#73726E] select-none overflow-x-auto py-1 scrollbar-none">
+    <nav className="flex items-center gap-1.5 sm:gap-2 text-[14px] sm:text-[15px] text-[#73726E] select-none overflow-x-auto py-1 scrollbar-none touch-pan-x min-w-0">
       <button
         onClick={navigateUp}
         disabled={!parentPath}

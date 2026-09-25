@@ -28,6 +28,7 @@ import {
   getPublicShareStreamUrl
 } from '../../services/api';
 import PreviewModal from '../preview/PreviewModal';
+import useProgressiveItems from '../../hooks/useProgressiveItems';
 
 const SPECIAL_IMAGE_EXTS = [
   '.cr2', '.cr3', '.nef', '.arw', '.dng', '.raf', '.orf', '.rw2', '.pef',
@@ -79,6 +80,7 @@ export default function SharedFolderView() {
         // 파일들에 공유 전용 다운로드/스트림/미리보기 URL 매핑
         const augmentedItems = (data.items || []).map((item) => ({
           ...item,
+          path: item.subpath,
           shareId,
           downloadUrl: getPublicShareDownloadUrl(shareId, item.subpath),
           previewUrl: getPublicSharePreviewUrl(shareId, item.subpath),
@@ -109,6 +111,12 @@ export default function SharedFolderView() {
     const query = searchQuery.toLowerCase().trim();
     return shareData.items.filter((i) => i.name.toLowerCase().includes(query));
   }, [shareData?.items, searchQuery]);
+
+  // 점진적 로딩 (대용량 폴더 모바일 스크롤 최적화)
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveItems(filteredItems, {
+    initialCount: 60,
+    batchSize: 60
+  });
 
   const handleNavigateSubpath = (newSubpath) => {
     if (newSubpath) {
@@ -159,11 +167,11 @@ export default function SharedFolderView() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#F7F6F3] dark:bg-[#111113] text-[#191919] dark:text-neutral-100 select-none">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-[#F7F6F3] dark:bg-[#111113] text-[#191919] dark:text-neutral-100 select-none">
       {/* 1. 상단 글로벌 헤더 */}
-      <header className="flex h-16 w-full items-center justify-between border-b border-[#E9E9E7] dark:border-neutral-800 bg-white dark:bg-[#16161a] px-5 sm:px-8 gap-4 sticky top-0 z-30 shadow-sm">
+      <header className="flex h-16 w-full items-center justify-between border-b border-[#E9E9E7] dark:border-neutral-800 bg-white dark:bg-[#16161a] px-3.5 sm:px-8 gap-2 sm:gap-4 shrink-0 shadow-sm z-30">
         {/* 좌측: 로고 및 폴더 타이틀 */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 shrink-0">
             <Folder className="h-5 w-5 fill-amber-500/20" />
           </div>
@@ -181,7 +189,7 @@ export default function SharedFolderView() {
 
         {/* 우측 도구: 검색 및 뷰 모드 토글 */}
         <div className="flex items-center gap-2 sm:gap-3">
-          <div className="relative w-40 sm:w-64">
+          <div className="relative w-36 sm:w-64 max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#9B9A97]" />
             <input
               type="text"
@@ -192,7 +200,7 @@ export default function SharedFolderView() {
             />
           </div>
 
-          <div className="flex items-center rounded-xl border border-[#E9E9E7] dark:border-neutral-800 bg-[#F4F3EF] dark:bg-neutral-900 p-0.5">
+          <div className="flex items-center rounded-xl border border-[#E9E9E7] dark:border-neutral-800 bg-[#F4F3EF] dark:bg-neutral-900 p-0.5 shrink-0">
             <button
               onClick={() => setViewMode('grid')}
               className={`rounded-lg p-1.5 transition ${
@@ -220,12 +228,12 @@ export default function SharedFolderView() {
       </header>
 
       {/* 2. 네비게이션 브레드크럼 바 */}
-      <div className="flex items-center justify-between border-b border-[#E9E9E7] dark:border-neutral-800 bg-white/80 dark:bg-[#16161a]/80 backdrop-blur-sm px-5 sm:px-8 py-2 text-[14px]">
-        <nav className="flex items-center gap-1.5 text-[#73726E] dark:text-neutral-400 overflow-x-auto py-1 scrollbar-none min-w-0">
+      <div className="flex items-center justify-between border-b border-[#E9E9E7] dark:border-neutral-800 bg-white/80 dark:bg-[#16161a]/80 backdrop-blur-sm px-3.5 sm:px-8 py-2 text-[14px] shrink-0">
+        <nav className="flex items-center gap-1.5 text-[#73726E] dark:text-neutral-400 overflow-x-auto py-1 scrollbar-none min-w-0 flex-1 touch-pan-x">
           <button
             onClick={handleNavigateUp}
             disabled={!subpath}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E9E9E7] dark:border-neutral-800 bg-white dark:bg-neutral-900 text-[#73726E] dark:text-neutral-400 hover:bg-[#F7F6F3] dark:hover:bg-neutral-800 transition disabled:opacity-30 disabled:hover:bg-white mr-1"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-[#E9E9E7] dark:border-neutral-800 bg-white dark:bg-neutral-900 text-[#73726E] dark:text-neutral-400 hover:bg-[#F7F6F3] dark:hover:bg-neutral-800 transition disabled:opacity-30 disabled:hover:bg-white mr-1 shrink-0"
             title="상위 폴더"
           >
             <ArrowUp className="h-3.5 w-3.5" />
@@ -253,13 +261,13 @@ export default function SharedFolderView() {
           })}
         </nav>
 
-        <span className="text-[12px] text-[#9B9A97] dark:text-neutral-500 hidden sm:inline shrink-0">
+        <span className="text-[12px] text-[#9B9A97] dark:text-neutral-500 hidden sm:inline shrink-0 ml-2">
           항목 {filteredItems.length}개
         </span>
       </div>
 
       {/* 3. 파일 및 폴더 뷰 영역 */}
-      <main className="flex-1 p-5 sm:p-8 max-w-7xl mx-auto w-full">
+      <main className="flex-1 overflow-y-auto p-3.5 sm:p-8 max-w-7xl mx-auto w-full scrollbar-thin touch-pan-y">
         {loading ? (
           <div className="flex h-64 items-center justify-center text-[#73726E]">
             <Loader2 className="h-6 w-6 animate-spin text-[#7F6DF2] mr-2" />
@@ -274,29 +282,22 @@ export default function SharedFolderView() {
           </div>
         ) : viewMode === 'grid' ? (
           /* 격자 뷰 */
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
-            {filteredItems.map((item) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-5">
+            {visibleItems.map((item) => (
               <div
                 key={item.subpath}
-                onDoubleClick={() => {
+                onClick={() => {
                   if (item.isDirectory) {
                     handleNavigateSubpath(item.subpath);
                   } else {
                     setPreviewItem(item);
                   }
                 }}
-                className="group relative flex flex-col rounded-2xl border border-[#E9E9E7] dark:border-neutral-800/80 bg-white dark:bg-[#18181c] p-3 transition hover:shadow-md hover:border-[#7F6DF2]/50 cursor-pointer"
+                className="group relative flex flex-col rounded-2xl border border-[#E9E9E7] dark:border-neutral-800/80 bg-white dark:bg-[#18181c] p-2.5 sm:p-3 transition hover:shadow-md hover:border-[#7F6DF2]/50 cursor-pointer"
               >
                 {/* 썸네일/아이콘 */}
                 <div
-                  onClick={() => {
-                    if (item.isDirectory) {
-                      handleNavigateSubpath(item.subpath);
-                    } else {
-                      setPreviewItem(item);
-                    }
-                  }}
-                  className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] dark:bg-neutral-900 overflow-hidden mb-2.5"
+                  className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] dark:bg-neutral-900 overflow-hidden mb-2"
                 >
                   {item.category === 'image' && !item.isDirectory ? (
                     <img
@@ -310,26 +311,26 @@ export default function SharedFolderView() {
                       }}
                     />
                   ) : (
-                    <FileItemIcon category={item.category} className="h-12 w-12" />
+                    <FileItemIcon category={item.category} className="h-10 w-10 sm:h-12 sm:w-12" />
                   )}
                 </div>
 
                 {/* 이름 및 크기 */}
                 <div className="flex-1 min-w-0">
                   <span
-                    className="block text-[14px] font-medium text-[#191919] dark:text-neutral-200 truncate group-hover:text-[#7F6DF2] transition"
+                    className="block text-[13px] sm:text-[14px] font-medium text-[#191919] dark:text-neutral-200 truncate group-hover:text-[#7F6DF2] transition"
                     title={item.name}
                   >
                     {item.name}
                   </span>
-                  <span className="text-[12px] text-[#9B9A97] dark:text-neutral-500 font-mono">
+                  <span className="text-[11px] sm:text-[12px] text-[#9B9A97] dark:text-neutral-500 font-mono">
                     {item.isDirectory ? '폴더' : item.sizeFormatted}
                   </span>
                 </div>
 
-                {/* 호버 시 파일 다운로드 / 미리보기 단축 버튼 */}
+                {/* 파일 다운로드 / 미리보기 단축 버튼 */}
                 {!item.isDirectory && (
-                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                  <div className="absolute top-2 right-2 flex items-center gap-1 opacity-0 group-hover:opacity-100 sm:opacity-0 transition">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -354,17 +355,23 @@ export default function SharedFolderView() {
                 )}
               </div>
             ))}
+            {hasMore && (
+              <div ref={sentinelRef} className="col-span-full py-8 flex items-center justify-center text-neutral-400">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                <span className="text-[13px]">항목 더 불러오는 중...</span>
+              </div>
+            )}
           </div>
         ) : (
           /* 목록 뷰 */
           <div className="rounded-2xl border border-[#E9E9E7] dark:border-neutral-800 bg-white dark:bg-[#18181c] overflow-hidden shadow-sm">
-            <div className="grid grid-cols-12 px-5 py-3 border-b border-[#E9E9E7] dark:border-neutral-800 text-[12px] font-semibold text-[#8E8E93] uppercase">
-              <span className="col-span-7 sm:col-span-8">이름</span>
-              <span className="col-span-3 sm:col-span-2 text-right">크기</span>
-              <span className="col-span-2 text-right">작업</span>
+            <div className="grid grid-cols-12 px-4 sm:px-5 py-3 border-b border-[#E9E9E7] dark:border-neutral-800 text-[12px] font-semibold text-[#8E8E93] uppercase">
+              <span className="col-span-8 sm:col-span-8">이름</span>
+              <span className="col-span-4 sm:col-span-2 text-right">크기</span>
+              <span className="hidden sm:inline sm:col-span-2 text-right">작업</span>
             </div>
             <div className="divide-y divide-[#E9E9E7]/60 dark:divide-neutral-800/60">
-              {filteredItems.map((item) => (
+              {visibleItems.map((item) => (
                 <div
                   key={item.subpath}
                   onClick={() => {
@@ -374,18 +381,18 @@ export default function SharedFolderView() {
                       setPreviewItem(item);
                     }
                   }}
-                  className="grid grid-cols-12 items-center px-5 py-3 text-[14px] hover:bg-[#F7F6F3] dark:hover:bg-neutral-800/40 transition cursor-pointer"
+                  className="grid grid-cols-12 items-center px-4 sm:px-5 py-3 text-[14px] hover:bg-[#F7F6F3] dark:hover:bg-neutral-800/40 transition cursor-pointer"
                 >
-                  <div className="col-span-7 sm:col-span-8 flex items-center gap-3 min-w-0 pr-3">
-                    <FileItemIcon category={item.category} className="h-5 w-5 shrink-0" />
-                    <span className="truncate font-medium text-[#191919] dark:text-neutral-200">
+                  <div className="col-span-8 sm:col-span-8 flex items-center gap-2.5 sm:gap-3 min-w-0 pr-2 sm:pr-3">
+                    <FileItemIcon category={item.category} className="h-4 w-4 sm:h-5 sm:w-5 shrink-0" />
+                    <span className="truncate font-medium text-[#191919] dark:text-neutral-200 text-[13px] sm:text-[14px]">
                       {item.name}
                     </span>
                   </div>
-                  <span className="col-span-3 sm:col-span-2 text-right text-[13px] font-mono text-[#73726E] dark:text-neutral-400">
+                  <span className="col-span-4 sm:col-span-2 text-right text-[12px] sm:text-[13px] font-mono text-[#73726E] dark:text-neutral-400">
                     {item.isDirectory ? '-' : item.sizeFormatted}
                   </span>
-                  <div className="col-span-2 flex items-center justify-end gap-1">
+                  <div className="hidden sm:flex col-span-2 items-center justify-end gap-1">
                     {!item.isDirectory && (
                       <>
                         <button
@@ -414,6 +421,12 @@ export default function SharedFolderView() {
                 </div>
               ))}
             </div>
+            {hasMore && (
+              <div ref={sentinelRef} className="py-8 flex items-center justify-center text-neutral-400">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                <span className="text-[13px]">항목 더 불러오는 중...</span>
+              </div>
+            )}
           </div>
         )}
       </main>

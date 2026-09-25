@@ -111,6 +111,7 @@ export function ExplorerProvider({ children }) {
 
   // 3. 앱 마운트 및 로그인 시 1회만 드라이브 초기 로드 및 URL 초기화
   useEffect(() => {
+    if (window.location.pathname.startsWith('/share')) return;
     if (!authenticated) {
       hasInitializedRef.current = false;
       return;

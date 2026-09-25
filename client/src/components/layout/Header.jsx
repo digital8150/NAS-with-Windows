@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import {
+  Menu,
   Search,
   LayoutGrid,
   List,
@@ -11,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
 
-export default function Header({ onNewFolder, onUploadFiles }) {
+export default function Header({ onNewFolder, onUploadFiles, onOpenSidebar }) {
   const {
     viewMode,
     setViewMode,
@@ -35,24 +36,36 @@ export default function Header({ onNewFolder, onUploadFiles }) {
   };
 
   return (
-    <header className="flex h-16 w-full items-center justify-between border-b border-[#E9E9E7] bg-white px-7 select-none shrink-0 gap-4">
-      {/* 1. 파일 검색창 */}
-      <div className="relative w-80 sm:w-96">
-        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9A97]" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="파일 검색..."
-          className="h-10 w-full rounded-xl border border-[#E9E9E7] bg-[#F4F3EF] pl-10 pr-4 text-[15px] text-[#37352F] placeholder-[#9B9A97] outline-none transition focus:border-[#7F6DF2] focus:bg-white"
-        />
+    <header className="flex h-16 w-full items-center justify-between border-b border-[#E9E9E7] bg-white px-3 sm:px-7 select-none shrink-0 gap-2 sm:gap-4">
+      {/* 1. 모바일 햄버거 메뉴 & 검색창 */}
+      <div className="flex items-center gap-2 flex-1 min-w-0 max-w-sm md:max-w-md">
+        {onOpenSidebar && (
+          <button
+            onClick={onOpenSidebar}
+            className="md:hidden flex h-10 w-10 items-center justify-center rounded-xl border border-[#E9E9E7] bg-white text-[#37352F] hover:bg-[#F7F6F3] shrink-0"
+            title="메뉴 열기"
+          >
+            <Menu className="h-5 w-5 text-[#37352F]" />
+          </button>
+        )}
+
+        <div className="relative flex-1 min-w-0">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9B9A97]" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="파일 검색..."
+            className="h-10 w-full rounded-xl border border-[#E9E9E7] bg-[#F4F3EF] pl-10 pr-3 text-[14px] sm:text-[15px] text-[#37352F] placeholder-[#9B9A97] outline-none transition focus:border-[#7F6DF2] focus:bg-white"
+          />
+        </div>
       </div>
 
       {/* 2. 우측 컨트롤 도구들 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* 줌 슬라이더 (- [====o] +) */}
         {viewMode === 'grid' && (
-          <div className="hidden md:flex items-center gap-2 text-[#73726E] mr-2">
+          <div className="hidden md:flex items-center gap-2 text-[#73726E] mr-1">
             <button
               onClick={() => setZoomLevel(prev => Math.max(1, prev - 1))}
               className="p-1 hover:text-[#37352F] transition"
@@ -67,7 +80,7 @@ export default function Header({ onNewFolder, onUploadFiles }) {
               step="1"
               value={zoomLevel}
               onChange={(e) => setZoomLevel(Number(e.target.value))}
-              className="h-1.5 w-20 accent-[#7F6DF2] bg-[#E9E9E7] rounded-lg cursor-pointer"
+              className="h-1.5 w-16 lg:w-20 accent-[#7F6DF2] bg-[#E9E9E7] rounded-lg cursor-pointer"
             />
             <button
               onClick={() => setZoomLevel(prev => Math.min(5, prev + 1))}
@@ -80,10 +93,10 @@ export default function Header({ onNewFolder, onUploadFiles }) {
         )}
 
         {/* 뷰 모드 토글 (List / Grid) */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setViewMode('list')}
-            className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
+            className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl transition ${
               viewMode === 'list'
                 ? 'bg-[#7F6DF2] text-white shadow-sm'
                 : 'border border-[#E9E9E7] bg-white text-[#73726E] hover:bg-[#F7F6F3]'
@@ -94,7 +107,7 @@ export default function Header({ onNewFolder, onUploadFiles }) {
           </button>
           <button
             onClick={() => setViewMode('grid')}
-            className={`flex h-10 w-10 items-center justify-center rounded-xl transition ${
+            className={`flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl transition ${
               viewMode === 'grid'
                 ? 'bg-[#7F6DF2] text-white shadow-sm'
                 : 'border border-[#E9E9E7] bg-white text-[#73726E] hover:bg-[#F7F6F3]'
@@ -109,7 +122,7 @@ export default function Header({ onNewFolder, onUploadFiles }) {
         <button
           onClick={refresh}
           disabled={loading}
-          className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E9E9E7] bg-white text-[#73726E] hover:bg-[#F7F6F3] hover:text-[#37352F] transition disabled:opacity-50"
+          className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-xl border border-[#E9E9E7] bg-white text-[#73726E] hover:bg-[#F7F6F3] hover:text-[#37352F] transition disabled:opacity-50"
           title="새로고침"
         >
           <RotateCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -118,19 +131,21 @@ export default function Header({ onNewFolder, onUploadFiles }) {
         {/* 새 폴더 */}
         <button
           onClick={onNewFolder}
-          className="flex h-10 items-center gap-2 rounded-xl border border-[#E9E9E7] bg-white px-4 text-[15px] font-medium text-[#37352F] hover:bg-[#F7F6F3] transition shadow-xs"
+          className="flex h-9 sm:h-10 items-center justify-center gap-1.5 sm:gap-2 rounded-xl border border-[#E9E9E7] bg-white px-2.5 sm:px-4 text-[14px] sm:text-[15px] font-medium text-[#37352F] hover:bg-[#F7F6F3] transition shadow-xs"
+          title="새 폴더"
         >
           <FolderPlus className="h-4 w-4 text-[#73726E]" />
-          <span>새 폴더</span>
+          <span className="hidden sm:inline">새 폴더</span>
         </button>
 
         {/* 업로드 */}
         <button
           onClick={() => fileInputRef.current?.click()}
-          className="flex h-10 items-center gap-2 rounded-xl bg-[#7F6DF2] px-4 text-[15px] font-medium text-white hover:bg-[#6855dd] transition shadow-sm"
+          className="flex h-9 sm:h-10 items-center justify-center gap-1.5 sm:gap-2 rounded-xl bg-[#7F6DF2] px-2.5 sm:px-4 text-[14px] sm:text-[15px] font-medium text-white hover:bg-[#6855dd] transition shadow-sm"
+          title="업로드"
         >
           <UploadCloud className="h-4 w-4" />
-          <span>업로드</span>
+          <span className="hidden sm:inline">업로드</span>
         </button>
 
         <input

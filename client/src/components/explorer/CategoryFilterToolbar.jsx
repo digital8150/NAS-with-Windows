@@ -44,7 +44,7 @@ export default function CategoryFilterToolbar() {
   }, [rawItems]);
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none select-none">
+    <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none select-none touch-pan-x">
       {FILTER_ITEMS.map((tab) => {
         const Icon = tab.icon;
         const isSelected = categoryFilter === tab.id;

@@ -48,31 +48,43 @@ const FileListRow = React.memo(function FileListRow({
   onItemClick,
   onItemDoubleClick
 }) {
+  const lastTapRef = React.useRef(0);
+
+  const handleTouchEnd = (e) => {
+    const now = Date.now();
+    if (now - lastTapRef.current < 320) {
+      e.preventDefault();
+      onItemDoubleClick(item);
+    }
+    lastTapRef.current = now;
+  };
+
   return (
     <tr
       onClick={(event) => onItemClick(event, item.path)}
       onDoubleClick={() => onItemDoubleClick(item)}
+      onTouchEnd={handleTouchEnd}
       className={`file-list-row transition cursor-pointer ${
         isSelected
           ? 'bg-[#F4F0F8] text-[#191919] font-medium'
           : 'hover:bg-[#F7F6F3]'
       }`}
     >
-      <td className="py-3.5 pl-6 pr-4">
-        <div className="flex items-center gap-3">
+      <td className="py-3 pl-3 sm:pl-6 pr-2 sm:pr-4">
+        <div className="flex items-center gap-2.5 sm:gap-3">
           <FileIcon category={item.category} className="h-4 w-4 shrink-0" />
-          <span className="truncate max-w-[320px] sm:max-w-lg font-medium text-[15px] text-[#37352F]">
+          <span className="truncate max-w-[200px] sm:max-w-md lg:max-w-lg font-medium text-[14px] sm:text-[15px] text-[#37352F]">
             {item.name}
           </span>
         </div>
       </td>
-      <td className="py-3.5 px-6 text-[#73726E] text-sm font-mono">
+      <td className="py-3 px-2 sm:px-6 text-[#73726E] text-[13px] sm:text-sm font-mono whitespace-nowrap">
         {item.isDirectory ? '-' : item.sizeFormatted}
       </td>
-      <td className="py-3.5 px-6 text-[#73726E] text-sm uppercase hidden md:table-cell font-mono">
+      <td className="py-3 px-6 text-[#73726E] text-sm uppercase hidden md:table-cell font-mono">
         {item.isDirectory ? '폴더' : (item.ext ? item.ext.replace('.', '') : '-')}
       </td>
-      <td className="py-3.5 pl-6 pr-8 text-[#73726E] text-sm hidden sm:table-cell font-mono">
+      <td className="py-3 pl-4 pr-6 sm:pl-6 sm:pr-8 text-[#73726E] text-sm hidden sm:table-cell font-mono">
         {formatDate(item.mtime)}
       </td>
     </tr>
@@ -148,34 +160,34 @@ export default function FileList({ onOpenFile }) {
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-[#E9E9E7] bg-white shadow-xs select-none">
-      <table className="w-full text-left text-[15px] text-[#37352F]">
-        <thead className="border-b border-[#E9E9E7] text-sm font-semibold text-[#73726E] bg-white">
+    <div className="w-full overflow-x-auto rounded-2xl border border-[#E9E9E7] bg-white shadow-xs select-none scrollbar-thin">
+      <table className="w-full text-left text-[14px] sm:text-[15px] text-[#37352F]">
+        <thead className="border-b border-[#E9E9E7] text-[13px] sm:text-sm font-semibold text-[#73726E] bg-white">
           <tr>
             <th
               onClick={() => handleSort('name')}
-              className="py-3.5 pl-6 pr-4 cursor-pointer hover:text-[#191919] transition"
+              className="py-3 pl-3 sm:pl-6 pr-2 sm:pr-4 cursor-pointer hover:text-[#191919] transition"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span>이름</span>
                 {renderSortIcon('name')}
               </div>
             </th>
             <th
               onClick={() => handleSort('size')}
-              className="py-3.5 px-6 cursor-pointer hover:text-[#191919] transition w-36 text-left"
+              className="py-3 px-2 sm:px-6 cursor-pointer hover:text-[#191919] transition w-24 sm:w-36 text-left"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span>크기</span>
                 {renderSortIcon('size')}
               </div>
             </th>
-            <th className="py-3.5 px-6 w-28 hidden md:table-cell">종류</th>
+            <th className="py-3 px-6 w-28 hidden md:table-cell">종류</th>
             <th
               onClick={() => handleSort('date')}
-              className="py-3.5 pl-6 pr-8 cursor-pointer hover:text-[#191919] transition w-36 hidden sm:table-cell"
+              className="py-3 pl-4 pr-6 sm:pl-6 sm:pr-8 cursor-pointer hover:text-[#191919] transition w-36 hidden sm:table-cell"
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <span>날짜</span>
                 {renderSortIcon('date')}
               </div>
