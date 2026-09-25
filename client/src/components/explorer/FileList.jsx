@@ -13,6 +13,7 @@ import {
   ArrowDown
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
+import useProgressiveItems from '../../hooks/useProgressiveItems';
 
 function FileIcon({ category, className = 'h-4 w-4' }) {
   switch (category) {
@@ -41,6 +42,43 @@ function formatDate(isoString) {
   return `${d.getFullYear()}. ${d.getMonth() + 1}. ${d.getDate()}.`;
 }
 
+const FileListRow = React.memo(function FileListRow({
+  item,
+  isSelected,
+  onItemClick,
+  onItemDoubleClick
+}) {
+  return (
+    <tr
+      onClick={(event) => onItemClick(event, item.path)}
+      onDoubleClick={() => onItemDoubleClick(item)}
+      className={`file-list-row transition cursor-pointer ${
+        isSelected
+          ? 'bg-[#F4F0F8] text-[#191919] font-medium'
+          : 'hover:bg-[#F7F6F3]'
+      }`}
+    >
+      <td className="py-3.5 pl-6 pr-4">
+        <div className="flex items-center gap-3">
+          <FileIcon category={item.category} className="h-4 w-4 shrink-0" />
+          <span className="truncate max-w-[320px] sm:max-w-lg font-medium text-[15px] text-[#37352F]">
+            {item.name}
+          </span>
+        </div>
+      </td>
+      <td className="py-3.5 px-6 text-[#73726E] text-sm font-mono">
+        {item.isDirectory ? '-' : item.sizeFormatted}
+      </td>
+      <td className="py-3.5 px-6 text-[#73726E] text-sm uppercase hidden md:table-cell font-mono">
+        {item.isDirectory ? '폴더' : (item.ext ? item.ext.replace('.', '') : '-')}
+      </td>
+      <td className="py-3.5 pl-6 pr-8 text-[#73726E] text-sm hidden sm:table-cell font-mono">
+        {formatDate(item.mtime)}
+      </td>
+    </tr>
+  );
+});
+
 export default function FileList({ onOpenFile }) {
   const {
     items,
@@ -56,6 +94,23 @@ export default function FileList({ onOpenFile }) {
     sortOrder,
     setSortOrder
   } = useExplorer();
+
+  const onOpenFileRef = React.useRef(onOpenFile);
+  onOpenFileRef.current = onOpenFile;
+
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveItems(items, {
+    initialCount: 160,
+    batchSize: 160
+  });
+
+  const handleItemClick = React.useCallback((event, path) => {
+    toggleSelection(path, event.ctrlKey || event.metaKey || event.shiftKey);
+  }, [toggleSelection]);
+
+  const handleItemDoubleClick = React.useCallback((item) => {
+    if (item.isDirectory) navigateTo(item.path);
+    else onOpenFileRef.current?.(item);
+  }, [navigateTo]);
 
   if (loading) {
     return (
@@ -144,43 +199,27 @@ export default function FileList({ onOpenFile }) {
             </tr>
           )}
 
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const isSelected = selectedPaths.has(item.path);
 
             return (
-              <tr
+              <FileListRow
                 key={item.path}
-                onClick={(e) => toggleSelection(item.path, e.ctrlKey || e.metaKey || e.shiftKey)}
-                onDoubleClick={() => {
-                  if (item.isDirectory) navigateTo(item.path);
-                  else if (onOpenFile) onOpenFile(item);
-                }}
-                className={`transition cursor-pointer ${
-                  isSelected
-                    ? 'bg-[#F4F0F8] text-[#191919] font-medium'
-                    : 'hover:bg-[#F7F6F3]'
-                }`}
-              >
-                <td className="py-3.5 pl-6 pr-4">
-                  <div className="flex items-center gap-3">
-                    <FileIcon category={item.category} className="h-4 w-4 shrink-0" />
-                    <span className="truncate max-w-[320px] sm:max-w-lg font-medium text-[15px] text-[#37352F]">
-                      {item.name}
-                    </span>
-                  </div>
-                </td>
-                <td className="py-3.5 px-6 text-[#73726E] text-sm font-mono">
-                  {item.isDirectory ? '-' : item.sizeFormatted}
-                </td>
-                <td className="py-3.5 px-6 text-[#73726E] text-sm uppercase hidden md:table-cell font-mono">
-                  {item.isDirectory ? '폴더' : (item.ext ? item.ext.replace('.', '') : '-')}
-                </td>
-                <td className="py-3.5 pl-6 pr-8 text-[#73726E] text-sm hidden sm:table-cell font-mono">
-                  {formatDate(item.mtime)}
-                </td>
-              </tr>
+                item={item}
+                isSelected={isSelected}
+                onItemClick={handleItemClick}
+                onItemDoubleClick={handleItemDoubleClick}
+              />
             );
           })}
+
+          {hasMore && (
+            <tr aria-hidden="true">
+              <td colSpan="4" className="h-px p-0">
+                <div ref={sentinelRef} className="h-px" />
+              </td>
+            </tr>
+          )}
 
           {items.length === 0 && !parentPath && (
             <tr>

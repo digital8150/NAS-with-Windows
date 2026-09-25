@@ -12,6 +12,7 @@ const {
     getExifData,
     parseHwpDocument
 } = require('../src/services/previewService');
+const { getThumbnail, normalizeThumbnailSize } = require('../src/services/thumbnailService');
 
 async function runTests() {
     console.log('\n======================================================');
@@ -44,6 +45,12 @@ async function runTests() {
     }
 
     console.log('--- 1. File Extension & Category Classification Tests ---');
+    test('Should constrain generated thumbnail dimensions', () => {
+        assert.strictEqual(normalizeThumbnailSize(undefined), 480);
+        assert.strictEqual(normalizeThumbnailSize(64), 128);
+        assert.strictEqual(normalizeThumbnailSize(480), 480);
+        assert.strictEqual(normalizeThumbnailSize(1200), 768);
+    });
     test('Should classify RAW camera extensions as image category', () => {
         const rawExts = ['.cr2', '.cr3', '.nef', '.arw', '.dng', '.raf', '.orf', '.rw2', '.pef'];
         for (const ext of rawExts) {
@@ -152,6 +159,13 @@ async function runTests() {
             // JPEG 매직 넘버 검증 (0xFF, 0xD8)
             assert.strictEqual(result.buffer[0], 0xFF);
             assert.strictEqual(result.buffer[1], 0xD8);
+
+            const thumbnailPath = await getThumbnail(tempBmp, 320);
+            const thumbnailBuffer = fs.readFileSync(thumbnailPath);
+            assert(thumbnailBuffer.length > 0);
+            assert.strictEqual(thumbnailBuffer[0], 0xFF);
+            assert.strictEqual(thumbnailBuffer[1], 0xD8);
+            fs.unlinkSync(thumbnailPath);
 
             fs.unlinkSync(tempTiff);
         } finally {

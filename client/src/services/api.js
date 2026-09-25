@@ -206,6 +206,11 @@ export function getPreviewImageUrl(filePath) {
   return `${BASE_URL}/api/media/preview-image?path=${encodeURIComponent(filePath)}`;
 }
 
+export function getThumbnailUrl(filePath, modifiedAt, size = 480) {
+  const version = modifiedAt ? `&v=${encodeURIComponent(modifiedAt)}` : '';
+  return `${BASE_URL}/api/media/thumbnail?path=${encodeURIComponent(filePath)}&size=${size}${version}`;
+}
+
 export function getPdfViewUrl(filePath) {
   return `${BASE_URL}/api/media/view-pdf?path=${encodeURIComponent(filePath)}`;
 }

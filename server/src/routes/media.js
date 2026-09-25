@@ -7,6 +7,7 @@ const { requireAuth } = require('../middleware/auth');
 const { validateAndResolvePath } = require('../config/security');
 const { probeMedia, streamRangeFile, streamRemuxVideo } = require('../services/mediaService');
 const { loadAndConvertSubtitle, extractEmbeddedSubtitle } = require('../services/subtitleService');
+const { getThumbnail } = require('../services/thumbnailService');
 const {
     getPreviewImage,
     extractAiPdf,
@@ -16,6 +17,33 @@ const {
 
 // 미디어 API는 requireAuth 적용 (쿠키, Authorization 헤더, query token 모두 지원)
 router.use(requireAuth);
+
+/**
+ * GET /api/media/thumbnail?path=...&size=480
+ * 파일 목록용 경량 이미지. 생성 결과는 원본 수정 시각을 기준으로 캐시한다.
+ */
+router.get('/thumbnail', async (req, res) => {
+    try {
+        const rawPath = req.query.path;
+        if (!rawPath) {
+            return res.status(400).json({ error: 'Path parameter is required' });
+        }
+
+        const safePath = validateAndResolvePath(rawPath);
+        if (!fs.existsSync(safePath) || fs.statSync(safePath).isDirectory()) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        const thumbnailPath = await getThumbnail(safePath, req.query.size);
+        res.setHeader('Cache-Control', 'private, max-age=31536000, immutable');
+        return res.sendFile(thumbnailPath);
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: 'Thumbnail Generation Failed',
+            message: err.message
+        });
+    }
+});
 
 /**
  * GET /api/media/info (또는 /api/media-info)

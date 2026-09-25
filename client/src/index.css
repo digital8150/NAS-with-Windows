@@ -24,6 +24,17 @@
   }
 }
 
+/* 화면 밖의 대량 항목은 브라우저가 그리기 작업을 건너뛸 수 있게 한다. */
+.file-grid-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 220px;
+}
+
+.file-list-row {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 50px;
+}
+
 /* 정갈한 커스텀 스크롤바 (메인 캔버스용) */
 ::-webkit-scrollbar {
   width: 6px;

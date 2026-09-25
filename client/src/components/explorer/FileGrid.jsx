@@ -10,23 +10,27 @@ import {
   Subtitles
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
-import { getDownloadUrl, getPreviewImageUrl } from '../../services/api';
+import { getPreviewImageUrl, getThumbnailUrl } from '../../services/api';
+import useProgressiveItems from '../../hooks/useProgressiveItems';
 
 const SPECIAL_IMAGE_EXTS = ['.cr2', '.cr3', '.nef', '.arw', '.dng', '.raf', '.orf', '.rw2', '.pef', '.psd', '.ai', '.tiff', '.tif'];
 
-function FileThumbnail({ item, iconSize = 'h-12 w-12' }) {
+const FileThumbnail = React.memo(function FileThumbnail({ item, iconSize = 'h-12 w-12' }) {
   const [thumbError, setThumbError] = React.useState(false);
   const ext = item.ext?.toLowerCase() || '';
   const isSpecial = SPECIAL_IMAGE_EXTS.includes(ext);
 
   if (item.category === 'image' && !item.isDirectory && !thumbError) {
-    const src = isSpecial ? getPreviewImageUrl(item.path) : getDownloadUrl(item.path);
+    const src = isSpecial
+      ? getPreviewImageUrl(item.path)
+      : getThumbnailUrl(item.path, item.mtime);
     return (
       <div className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] overflow-hidden">
         <img
           src={src}
           alt={item.name}
           loading="lazy"
+          decoding="async"
           onError={() => setThumbError(true)}
           className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
         />
@@ -51,7 +55,38 @@ function FileThumbnail({ item, iconSize = 'h-12 w-12' }) {
       {icon}
     </div>
   );
-}
+});
+
+const GridItem = React.memo(function GridItem({
+  item,
+  iconSize,
+  isSelected,
+  onItemClick,
+  onItemDoubleClick
+}) {
+  return (
+    <div
+      onClick={(event) => onItemClick(event, item)}
+      onDoubleClick={() => onItemDoubleClick(item)}
+      className={`file-grid-item group relative flex flex-col rounded-2xl border bg-white p-4 transition-[border-color,box-shadow] duration-150 cursor-pointer shadow-xs ${
+        isSelected
+          ? 'border-2 border-[#7F6DF2] shadow-md ring-2 ring-[#7F6DF2]/20'
+          : 'border-[#E9E9E7] hover:border-[#C4C4C0] hover:shadow-md'
+      }`}
+    >
+      <FileThumbnail item={item} iconSize={iconSize} />
+      <span
+        className="mt-3 truncate text-center text-[15px] font-medium text-[#37352F] group-hover:text-[#191919]"
+        title={item.name}
+      >
+        {item.name}
+      </span>
+      <span className="mt-0.5 text-center text-[13px] text-[#73726E] font-mono">
+        {item.isDirectory ? '폴더' : item.sizeFormatted}
+      </span>
+    </div>
+  );
+});
 
 export default function FileGrid({ onOpenFile }) {
   const {
@@ -63,6 +98,27 @@ export default function FileGrid({ onOpenFile }) {
     toggleSelection,
     navigateTo
   } = useExplorer();
+
+  const onOpenFileRef = React.useRef(onOpenFile);
+  onOpenFileRef.current = onOpenFile;
+
+  const { visibleItems, hasMore, sentinelRef } = useProgressiveItems(items, {
+    initialCount: 80,
+    batchSize: 80
+  });
+
+  const handleItemClick = React.useCallback((e, item) => {
+    const isMulti = e.ctrlKey || e.metaKey || e.shiftKey;
+    toggleSelection(item.path, isMulti);
+  }, [toggleSelection]);
+
+  const handleDoubleClick = React.useCallback((item) => {
+    if (item.isDirectory) {
+      navigateTo(item.path);
+    } else {
+      onOpenFileRef.current?.(item);
+    }
+  }, [navigateTo]);
 
   if (loading) {
     return (
@@ -106,53 +162,23 @@ export default function FileGrid({ onOpenFile }) {
     5: 'h-20 w-20'
   }[zoomLevel] || 'h-12 w-12';
 
-  const handleItemClick = (e, item) => {
-    const isMulti = e.ctrlKey || e.metaKey || e.shiftKey;
-    toggleSelection(item.path, isMulti);
-  };
-
-  const handleDoubleClick = (item) => {
-    if (item.isDirectory) {
-      navigateTo(item.path);
-    } else if (onOpenFile) {
-      onOpenFile(item);
-    }
-  };
-
   return (
     <div className={`grid ${gridClasses} select-none`}>
-      {items.map((item) => {
+      {visibleItems.map((item) => {
         const isSelected = selectedPaths.has(item.path);
 
         return (
-          <div
+          <GridItem
             key={item.path}
-            onClick={(e) => handleItemClick(e, item)}
-            onDoubleClick={() => handleDoubleClick(item)}
-            className={`group relative flex flex-col rounded-2xl border bg-white p-4 transition-all duration-150 cursor-pointer shadow-xs ${
-              isSelected
-                ? 'border-2 border-[#7F6DF2] shadow-md ring-2 ring-[#7F6DF2]/20'
-                : 'border-[#E9E9E7] hover:border-[#C4C4C0] hover:shadow-md'
-            }`}
-          >
-            {/* 스크린샷 1:1 썸네일 영역 */}
-            <FileThumbnail item={item} iconSize={iconSizes} />
-
-            {/* 파일명 (15px font-medium #37352F) */}
-            <span
-              className="mt-3 truncate text-center text-[15px] font-medium text-[#37352F] group-hover:text-[#191919]"
-              title={item.name}
-            >
-              {item.name}
-            </span>
-
-            {/* 파일 크기 (13px #73726E font-mono) */}
-            <span className="mt-0.5 text-center text-[13px] text-[#73726E] font-mono">
-              {item.isDirectory ? '폴더' : item.sizeFormatted}
-            </span>
-          </div>
+            item={item}
+            iconSize={iconSizes}
+            isSelected={isSelected}
+            onItemClick={handleItemClick}
+            onItemDoubleClick={handleDoubleClick}
+          />
         );
       })}
+      {hasMore && <div ref={sentinelRef} className="col-span-full h-px" aria-hidden="true" />}
     </div>
   );
 }

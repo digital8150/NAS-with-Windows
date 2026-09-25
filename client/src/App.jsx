@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ExplorerProvider, useExplorer } from './contexts/ExplorerContext';
@@ -38,8 +38,35 @@ function MainLayout() {
     currentPath,
     viewMode,
     refresh,
-    items
+    items,
+    selectedPaths
   } = useExplorer();
+
+  const fileViewRef = useRef(null);
+  const selectionToolbarRef = useRef(null);
+  const hadSelectionRef = useRef(false);
+
+  useEffect(() => {
+    const hasSelection = selectedPaths.size > 0;
+    let animationFrame;
+
+    if (hasSelection && !hadSelectionRef.current) {
+      animationFrame = requestAnimationFrame(() => {
+        const toolbarHeight = selectionToolbarRef.current?.getBoundingClientRect().height ?? 0;
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        fileViewRef.current?.scrollBy({
+          top: toolbarHeight,
+          behavior: prefersReducedMotion ? 'auto' : 'smooth'
+        });
+      });
+    }
+
+    hadSelectionRef.current = hasSelection;
+    return () => {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+    };
+  }, [selectedPaths.size]);
 
   // 미리보기 모달 상태
   const [previewItem, setPreviewItem] = useState(null);
@@ -256,7 +283,12 @@ function MainLayout() {
         </div>
 
         {/* 메인 파일 뷰 */}
-        <main className="flex-1 overflow-y-auto px-7 pb-6 scrollbar-thin">
+        <main
+          ref={fileViewRef}
+          className={`flex-1 overflow-y-auto px-7 scrollbar-thin transition-[padding-bottom] duration-200 ${
+            selectedPaths.size > 0 ? 'pb-32' : 'pb-6'
+          }`}
+        >
           {viewMode === 'grid' ? (
             <FileGrid onOpenFile={(item) => setPreviewItem(item)} />
           ) : (
@@ -289,6 +321,7 @@ function MainLayout() {
 
       {/* 하단 선택 툴바 */}
       <SelectionToolbar
+        toolbarRef={selectionToolbarRef}
         onRename={handleOpenRename}
         onDelete={handleOpenDelete}
         onPreview={(item) => setPreviewItem(item)}
