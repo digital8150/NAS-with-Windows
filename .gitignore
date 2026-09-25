@@ -37,3 +37,5 @@ tmp/
 
 # Runtime Data
 server/data/
+*.pid
+.pm2/

@@ -58,7 +58,8 @@ function validateShareSubpath(share, requestedSubpath = '') {
     const rootPath = path.resolve(share.folderPath);
     const sanitizedSubpath = (requestedSubpath || '')
         .replace(/\0/g, '')
-        .replace(/^[/\\]+/, '');
+        .replace(/\\/g, '/')
+        .replace(/^\/+/, '');
 
     const targetPath = path.resolve(rootPath, sanitizedSubpath);
 

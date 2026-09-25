@@ -102,7 +102,7 @@ export default function Sidebar({ onOpenManageShares }) {
                   <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                     <HardDrive className={`h-4 w-4 shrink-0 ${isSelected ? 'text-[#a594fd]' : 'text-[#a1a1aa]'}`} />
                     <span className="truncate">
-                      {drive.id}: {drive.label ? `(${drive.label})` : ''}
+                      {/^[a-zA-Z]$/.test(drive.id) ? `${drive.id}: ${drive.label ? `(${drive.label})` : ''}` : (drive.label || drive.mountPoint)}
                     </span>
                   </div>
                   <span className={`text-[13px] shrink-0 whitespace-nowrap font-mono ${isSelected ? 'text-[#c4b5fd]' : 'text-[#8e8e93]'}`}>
@@ -135,8 +135,8 @@ export default function Sidebar({ onOpenManageShares }) {
       {currentDrive && (
         <div className="mt-3.5 rounded-xl border border-[#27272a] bg-[#1c1c20] p-4">
           <div className="flex items-center justify-between text-[14px] text-[#a1a1aa] mb-2 font-medium">
-            <span className="truncate mr-2" title={`저장공간 (${currentDrive.id}:)`}>
-              저장공간 ({currentDrive.id}:)
+            <span className="truncate mr-2" title={`저장공간 (${/^[a-zA-Z]$/.test(currentDrive.id) ? `${currentDrive.id}:` : (currentDrive.label || currentDrive.mountPoint)})`}>
+              저장공간 ({/^[a-zA-Z]$/.test(currentDrive.id) ? `${currentDrive.id}:` : (currentDrive.label || currentDrive.mountPoint)})
             </span>
             <span className="font-mono font-bold text-white shrink-0">
               {currentDrive.usedPercentage}%

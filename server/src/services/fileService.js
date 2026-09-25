@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const isWindows = process.platform === 'win32';
 const { validateAndResolvePath, isSystemProtectedPath } = require('../config/security');
 const { formatBytes } = require('./driveService');
 
@@ -100,8 +101,8 @@ async function listDirectory(targetPath) {
     }
 
     const driveLetterMatch = safePath.match(/^([a-zA-Z]):\\/);
-    const driveLetter = driveLetterMatch ? driveLetterMatch[1].toUpperCase() : '';
-    const isRoot = safePath.toLowerCase() === `${driveLetter.toLowerCase()}:\\`;
+    const driveLetter = driveLetterMatch ? driveLetterMatch[1].toUpperCase() : (safePath === '/' ? '/' : safePath);
+    const isRoot = isWindows ? (driveLetterMatch && safePath.toLowerCase() === `${driveLetter.toLowerCase()}:\\`) : (safePath === '/');
     const parentPath = isRoot ? null : path.dirname(safePath);
 
     let entries;
@@ -244,8 +245,8 @@ async function deleteItems(targetPaths) {
         try {
             const safePath = validateAndResolvePath(itemPath);
 
-            // 드라이브 루트(예: C:\, D:\) 자체를 삭제하려는 시도 차단
-            if (/^[a-zA-Z]:\\?$/.test(safePath)) {
+            // 드라이브 루트(예: C:\, D:\ 또는 /) 자체를 삭제하려는 시도 차단
+            if (isWindows ? /^[a-zA-Z]:\\?$/.test(safePath) : safePath === '/') {
                 throw new Error('Cannot delete a drive root');
             }
 

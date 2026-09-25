@@ -81,14 +81,26 @@ NAS-with-windows/
 
 ---
 
-## 🔒 SSL/HTTPS 보안 연결 (Let's Encrypt)
+---
 
-- **도메인**: `https://pc.codingbot.kr` (정식 공인 SSL 인증서 적용)
-- **HTTP -> HTTPS 자동 전환**: 포트 80으로 들어오는 모든 웹 요청을 443(HTTPS)으로 자동 301 리다이렉트.
-- **인증서 자동 갱신 스크립트**: [`renew-ssl.bat`](renew-ssl.bat) 실행 시 간편 갱신 및 Nginx 자동 반영.
+## 🐧 Linux (Debian) 구동 & 운영 가이드
+
+Windows뿐만 아니라 Debian 리눅스 환경에서도 완벽하게 구동되도록 크로스 플랫폼 호환성이 추가되었습니다.
+
+- **실행 스크립트**:
+  - 서버 시작: `./start.sh` (PM2 기반 프로세스 백그라운드 관리)
+  - 서버 중지: `./stop.sh`
+  - 상태 확인: `./status.sh`
+- **도메인 접속**:
+  - `https://drive.home.codingbot.kr` (Nginx 리버스 프록시 및 Let's Encrypt 와일드카드 SSL 인증서 연동)
+- **리눅스 호환 특화 기능**:
+  - `/` (루트) 및 마운트된 모든 볼륨 자동 감지 (`df -B1` 및 POSIX `statfs` 기반 실시간 용량 측정)
+  - 커널 및 가상 파일시스템(`/proc`, `/sys`, `/dev`, `/run` 등) 자동 보호 및 보안 필터링
+  - 사용자 홈 디렉토리 및 작업 저장소(`repos`) 라이브러리 자동 매핑
 
 ---
 
 ## 📋 상세 설계 문서
 
 상세한 보안 아키텍처, FFmpeg 파이프라인 명세, API 설계 및 구현 로드맵은 [PLAN.md](PLAN.md)를 참조하세요.
+

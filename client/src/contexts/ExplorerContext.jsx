@@ -6,19 +6,59 @@ import { useAuth } from './AuthContext';
 const ExplorerContext = createContext(null);
 
 /**
- * Windows 파일 시스템 경로 표준화
- * 역슬래시 통일 및 드라이브 루트(C:\ 등)를 제외한 말단 슬래시 제거
+ * 파일 시스템 경로 표준화 (Windows 및 Linux 크로스 플랫폼 지원)
  */
 export function normalizePath(p) {
   if (!p || typeof p !== 'string') return '';
-  let s = p.replace(/\//g, '\\').trim();
-  if (/^[a-zA-Z]:$/.test(s)) {
-    s += '\\';
+  const trimmed = p.trim();
+
+  // 윈도우 드라이브 경로 (예: C:\, D:/test)
+  if (/^[a-zA-Z]:/.test(trimmed)) {
+    let s = trimmed.replace(/\//g, '\\');
+    if (/^[a-zA-Z]:$/.test(s)) {
+      s += '\\';
+    }
+    if (s.length > 3 && s.endsWith('\\')) {
+      s = s.slice(0, -1);
+    }
+    return s;
   }
-  if (s.length > 3 && s.endsWith('\\')) {
+
+  // 유닉스/리눅스 경로 (예: /, /root, /home/user)
+  let s = trimmed.replace(/\\/g, '/');
+  s = s.replace(/\/+/g, '/');
+  if (s.length > 1 && s.endsWith('/')) {
     s = s.slice(0, -1);
   }
   return s;
+}
+
+/**
+ * 경로에 해당하는 드라이브/마운트포인트 객체 매칭
+ */
+export function matchDriveForPath(targetPath, driveList) {
+  if (!targetPath || !driveList || driveList.length === 0) return null;
+  const norm = normalizePath(targetPath);
+
+  // 윈도우 드라이브 매칭
+  if (/^[a-zA-Z]:/.test(norm)) {
+    const letter = norm.charAt(0).toUpperCase();
+    return driveList.find(d => d.id === letter) || driveList[0];
+  }
+
+  // 리눅스 마운트포인트 최장 일치 매칭
+  let bestMatch = null;
+  let bestLen = -1;
+  for (const drive of driveList) {
+    const mp = normalizePath(drive.mountPoint);
+    if (norm === mp || norm.startsWith(mp === '/' ? '/' : mp + '/')) {
+      if (mp.length > bestLen) {
+        bestLen = mp.length;
+        bestMatch = drive;
+      }
+    }
+  }
+  return bestMatch || driveList[0];
 }
 
 export function ExplorerProvider({ children }) {
@@ -84,8 +124,7 @@ export function ExplorerProvider({ children }) {
       const urlPath = normalizePath(searchParams.get('path'));
       if (urlPath) {
         // URL에 이미 경로가 있으면 해당 드라이브 매칭
-        const driveLetter = urlPath.charAt(0).toUpperCase();
-        const matched = loadedDrives.find(d => d.id === driveLetter);
+        const matched = matchDriveForPath(urlPath, loadedDrives);
         if (matched) setCurrentDrive(matched);
         setCurrentPath(urlPath);
       } else {
@@ -119,12 +158,10 @@ export function ExplorerProvider({ children }) {
   // 5. currentPath 변경 시 해당 드라이브 매칭 (불필요한 re-render 방지)
   useEffect(() => {
     if (!currentPath || drives.length === 0) return;
-    const driveLetter = currentPath.charAt(0).toUpperCase();
-    setCurrentDrive(prev => {
-      if (prev?.id === driveLetter) return prev;
-      const matched = drives.find(d => d.id === driveLetter);
-      return matched || prev;
-    });
+    const matched = matchDriveForPath(currentPath, drives);
+    if (matched) {
+      setCurrentDrive(prev => (prev?.id === matched.id ? prev : matched));
+    }
   }, [currentPath, drives]);
 
   // 6. 디렉토리 파일 목록 로드 (currentPath 변경 시 단 한 번만 실행)
