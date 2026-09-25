@@ -1,5 +1,5 @@
 const assert = require('assert');
-const { validateAndResolvePath, isSystemProtectedPath } = require('../src/config/security');
+const { validateAndResolvePath, isSystemProtectedPath, isWindows } = require('../src/config/security');
 const {
     getIpSecurityStatus,
     recordLoginFailure,
@@ -81,9 +81,15 @@ async function runAllTests() {
         assert.throws(() => validateAndResolvePath('C:\\MyData\\..\\Windows\\System32'), /Protected System Resource/);
     });
 
-    it('Should block relative path without valid Windows drive letter', () => {
+    it('Should block relative path without valid drive letter or absolute path', () => {
         assert.throws(() => validateAndResolvePath('../../../etc/passwd'), /Invalid drive format/);
-        assert.throws(() => validateAndResolvePath('/var/log/syslog'), /Invalid drive format/);
+        if (isWindows) {
+            assert.throws(() => validateAndResolvePath('/var/log/syslog'), /Invalid drive format/);
+        } else {
+            assert.throws(() => validateAndResolvePath('var/log/syslog'), /Invalid drive format/);
+            assert.throws(() => validateAndResolvePath('/proc/version'), /Protected System Resource/);
+            assert.throws(() => validateAndResolvePath('/etc/shadow'), /Protected System Resource/);
+        }
     });
 
     it('Should allow safe custom paths on C:, D:, E:, F:', () => {
@@ -172,12 +178,12 @@ async function runAllTests() {
         assert.strictEqual(verifyToken(tampered), null);
     });
 
-    console.log('\n--- 4. Windows Multi-Drive Discovery Service Tests ---');
+    console.log('\n--- 4. Multi-Drive Discovery Service Tests ---');
 
-    await itAsync('Should discover Windows drives and calculate capacity metrics', async () => {
+    await itAsync('Should discover system drives and calculate capacity metrics', async () => {
         const drives = await getMountedDrives(true);
         assert.ok(Array.isArray(drives), 'Drives should be an array');
-        assert.ok(drives.length >= 1, 'Should find at least 1 drive (C:)');
+        assert.ok(drives.length >= 1, 'Should find at least 1 drive');
 
         console.log(`     Discovered ${drives.length} drives:`);
         drives.forEach(d => {
@@ -192,9 +198,15 @@ async function runAllTests() {
             assert.ok(d.freeFormatted);
         });
 
-        const driveC = drives.find(d => d.id === 'C');
-        assert.ok(driveC, 'Drive C must be present');
-        assert.strictEqual(driveC.isSystemDrive, true);
+        if (isWindows) {
+            const driveC = drives.find(d => d.id === 'C');
+            assert.ok(driveC, 'Drive C must be present');
+            assert.strictEqual(driveC.isSystemDrive, true);
+        } else {
+            const systemDrive = drives.find(d => d.isSystemDrive);
+            assert.ok(systemDrive, 'Root system drive must be present on Linux');
+            assert.strictEqual(systemDrive.mountPoint, '/');
+        }
     });
 
     it('Should format bytes properly', () => {

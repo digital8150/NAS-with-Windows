@@ -47,7 +47,7 @@ const LINUX_EXCLUDES = [
     /(?:^|[\\/])system volume information(?:[\\/]|$)/i
 ];
 
-const SYSTEM_EXCLUDES = isWindows ? WINDOWS_EXCLUDES : LINUX_EXCLUDES;
+const SYSTEM_EXCLUDES = [...WINDOWS_EXCLUDES, ...LINUX_EXCLUDES];
 
 const os = require('os');
 
@@ -65,22 +65,20 @@ const ALLOWED_USER_SUBDIRS = ['downloads', 'documents', 'pictures', 'videos', 'm
 function isUserLibraryPath(normalizedPath) {
     const lower = normalizedPath.toLowerCase();
     
-    if (isWindows) {
-        // 민감한 사용자 내부 시스템 설정 폴더 차단
-        if (/(?:[\\/])(appdata|local settings|application data)(?:[\\/]|$)/i.test(lower)) {
-            return false;
-        }
-        if (/(?:[\\/])ntuser[^\\]*$/i.test(lower)) {
-            return false;
-        }
+    // 민감한 사용자 내부 시스템 설정 폴더 차단
+    if (/(?:[\\/])(appdata|local settings|application data)(?:[\\/]|$)/i.test(lower)) {
+        return false;
+    }
+    if (/(?:[\\/])ntuser[^\\]*$/i.test(lower)) {
+        return false;
+    }
 
-        // C:\Users\<username>\<allowedSubdir> 형태 검사
-        const userLibMatch = lower.match(/^c:\\users\\[^\\]+\\([^\\]+)/i);
-        if (userLibMatch) {
-            const sub = userLibMatch[1];
-            if (ALLOWED_USER_SUBDIRS.includes(sub)) {
-                return true;
-            }
+    // C:\Users\<username>\<allowedSubdir> 형태 검사
+    const userLibMatch = lower.match(/^c:\\users\\[^\\]+\\([^\\]+)/i);
+    if (userLibMatch) {
+        const sub = userLibMatch[1];
+        if (ALLOWED_USER_SUBDIRS.includes(sub)) {
+            return true;
         }
     }
 
@@ -103,14 +101,15 @@ function isUserLibraryPath(normalizedPath) {
  */
 function isSystemProtectedPath(targetPath) {
     if (!targetPath) return true;
-    const normalized = path.normalize(targetPath);
+    const winNormalized = targetPath.replace(/\//g, '\\');
+    const posixNormalized = targetPath.replace(/\\/g, '/');
 
     // 허용된 사용자 표준 라이브러리(다운로드, 문서, 사진 등)는 접근 허용
-    if (isUserLibraryPath(normalized)) {
+    if (isUserLibraryPath(winNormalized) || isUserLibraryPath(posixNormalized)) {
         return false;
     }
 
-    return SYSTEM_EXCLUDES.some(pattern => pattern.test(normalized));
+    return SYSTEM_EXCLUDES.some(pattern => pattern.test(winNormalized) || pattern.test(posixNormalized));
 }
 
 /**
@@ -138,47 +137,49 @@ function validateAndResolvePath(requestedPath) {
 
     let normalized;
 
-    if (isWindows) {
-        // 1. 윈도우 드라이브 레터로 시작하는지 검증 (상대 경로 및 암묵적 CWD 확장 차단)
-        if (!/^[a-zA-Z]:(?:[\\/]|$)/.test(trimmed)) {
-            const err = new Error('Invalid drive format. Path must start with a valid drive letter (e.g. C:\\)');
-            err.statusCode = 400;
-            throw err;
-        }
-
-        // 2. 역슬래시 및 경로 정규화
-        let formatted = trimmed;
+    // 1. 윈도우 드라이브 레터로 시작하는지 검사 (예: C:\, D:/test)
+    if (/^[a-zA-Z]:(?:[\\/]|$)/.test(trimmed)) {
+        let formatted = trimmed.replace(/\//g, '\\');
         if (/^[a-zA-Z]:$/.test(formatted)) {
             formatted += '\\';
         }
 
-        normalized = path.normalize(path.resolve(formatted));
+        normalized = path.win32.normalize(formatted);
 
         // 정규화 후에도 여전히 드라이브 레터로 시작하는지 재검증
-        const match = normalized.match(/^[a-zA-Z]:\\/);
+        const match = normalized.match(/^[a-zA-Z]:(?:\\|$)/);
         if (!match) {
             const err = new Error('Invalid drive format. Path must start with a valid drive letter (e.g. C:\\)');
             err.statusCode = 400;
             throw err;
         }
-    } else {
-        // 리눅스 환경: 반드시 절대 경로('/')로 시작해야 함
-        if (!trimmed.startsWith('/')) {
-            const err = new Error('Invalid path format. Path must be an absolute path starting with /');
+    } else if (trimmed.startsWith('/')) {
+        // 2. POSIX 절대 경로 검사
+        if (isWindows) {
+            // Windows 환경에서는 반드시 드라이브 레터로 시작해야 함
+            const err = new Error('Invalid drive format. Path must start with a valid drive letter (e.g. C:\\)');
             err.statusCode = 400;
             throw err;
         }
 
-        normalized = path.normalize(path.resolve(trimmed));
+        normalized = path.posix.normalize(path.posix.resolve(trimmed));
 
         if (!normalized.startsWith('/')) {
             const err = new Error('Invalid path format. Path must be an absolute path starting with /');
             err.statusCode = 400;
             throw err;
         }
+    } else {
+        // 3. 상대 경로 및 유효하지 않은 드라이브 형식 차단
+        const errMsg = isWindows
+            ? 'Invalid drive format. Path must start with a valid drive letter (e.g. C:\\)'
+            : 'Invalid drive format. Path must start with a valid drive letter or /';
+        const err = new Error(errMsg);
+        err.statusCode = 400;
+        throw err;
     }
 
-    // 3. 블랙리스트(시스템 보호 자원) 검사
+    // 4. 시스템 보호 자원(블랙리스트) 검사
     if (isSystemProtectedPath(normalized)) {
         const err = new Error('Access Denied: Protected System Resource');
         err.statusCode = 403;

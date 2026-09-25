@@ -297,7 +297,7 @@ function getUserLibraries() {
         { id: 'videos', name: '내 동영상', sub: 'Videos', icon: 'Film' },
         { id: 'music', name: '내 음악', sub: 'Music', icon: 'Music' },
         { id: 'desktop', name: '바탕화면', sub: 'Desktop', icon: 'Monitor' },
-        { id: 'repos', name: '작업 저장소 (repos)', sub: 'repos', icon: 'FileText' }
+        { id: 'repos', name: '작업 저장소', sub: 'repos', icon: 'FileText' }
     ];
 
     const libraries = [];

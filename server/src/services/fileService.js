@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const isWindows = process.platform === 'win32';
 const { validateAndResolvePath, isSystemProtectedPath } = require('../config/security');
 const { formatBytes } = require('./driveService');
 
@@ -99,7 +100,6 @@ async function listDirectory(targetPath) {
         throw err;
     }
 
-    const isWindows = process.platform === 'win32';
     const driveLetterMatch = safePath.match(/^([a-zA-Z]):\\/);
     const driveLetter = driveLetterMatch ? driveLetterMatch[1].toUpperCase() : (safePath === '/' ? '/' : safePath);
     const isRoot = isWindows ? (driveLetterMatch && safePath.toLowerCase() === `${driveLetter.toLowerCase()}:\\`) : (safePath === '/');

@@ -3,7 +3,7 @@ module.exports = {
     {
       name: 'nas-drive',
       script: 'server/src/index.js',
-      cwd: '/root/repos/NAS-with-Windows',
+      cwd: __dirname,
       env: {
         NODE_ENV: 'production',
         PORT: 3001
