@@ -7,15 +7,27 @@ export default function Breadcrumb() {
 
   if (!currentPath) return null;
 
-  const normalized = currentPath.replace(/\//g, '\\');
-  const segments = normalized.split('\\').filter(Boolean);
+  const isWinPath = /^[a-zA-Z]:/.test(currentPath);
+  let segments = [];
+  let buildPathUpTo;
 
-  const buildPathUpTo = (index) => {
-    if (index === 0) {
-      return `${segments[0]}\\`;
-    }
-    return segments.slice(0, index + 1).join('\\');
-  };
+  if (isWinPath) {
+    const normalized = currentPath.replace(/\//g, '\\');
+    segments = normalized.split('\\').filter(Boolean);
+    buildPathUpTo = (index) => {
+      if (index === 0) {
+        return `${segments[0]}\\`;
+      }
+      return segments.slice(0, index + 1).join('\\');
+    };
+  } else {
+    const parts = currentPath.split('/').filter(Boolean);
+    segments = ['/', ...parts];
+    buildPathUpTo = (index) => {
+      if (index === 0) return '/';
+      return '/' + segments.slice(1, index + 1).join('/');
+    };
+  }
 
   return (
     <nav className="flex items-center gap-2 text-[15px] text-[#73726E] select-none overflow-x-auto py-1 scrollbar-none">

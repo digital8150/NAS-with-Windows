@@ -31,9 +31,9 @@ export default function DriveSelector() {
                 />
                 <span
                   className={`text-sm font-semibold truncate ${isSelected ? 'text-[#7F6DF2]' : 'text-[#37352F]'}`}
-                  title={`${drive.id}: ${drive.label ? `(${drive.label})` : ''}`}
+                  title={/^[a-zA-Z]$/.test(drive.id) ? `${drive.id}: (${drive.label})` : (drive.label || drive.mountPoint)}
                 >
-                  {drive.id}: {drive.label ? `(${drive.label})` : ''}
+                  {/^[a-zA-Z]$/.test(drive.id) ? `${drive.id}: ${drive.label ? `(${drive.label})` : ''}` : (drive.label || drive.mountPoint)}
                 </span>
               </div>
             </div>

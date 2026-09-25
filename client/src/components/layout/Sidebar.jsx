@@ -102,7 +102,7 @@ export default function Sidebar({ onOpenManageShares }) {
                   <div className="flex items-center gap-3 min-w-0 flex-1 mr-2">
                     <HardDrive className={`h-4 w-4 shrink-0 ${isSelected ? 'text-[#a594fd]' : 'text-[#a1a1aa]'}`} />
                     <span className="truncate">
-                      {drive.id}: {drive.label ? `(${drive.label})` : ''}
+                      {/^[a-zA-Z]$/.test(drive.id) ? `${drive.id}: ${drive.label ? `(${drive.label})` : ''}` : (drive.label || drive.mountPoint)}
                     </span>
                   </div>
                   <span className={`text-[13px] shrink-0 whitespace-nowrap font-mono ${isSelected ? 'text-[#c4b5fd]' : 'text-[#8e8e93]'}`}>
