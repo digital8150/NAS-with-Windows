@@ -135,8 +135,8 @@ export default function Sidebar({ onOpenManageShares }) {
       {currentDrive && (
         <div className="mt-3.5 rounded-xl border border-[#27272a] bg-[#1c1c20] p-4">
           <div className="flex items-center justify-between text-[14px] text-[#a1a1aa] mb-2 font-medium">
-            <span className="truncate mr-2" title={`저장공간 (${currentDrive.id}:)`}>
-              저장공간 ({currentDrive.id}:)
+            <span className="truncate mr-2" title={`저장공간 (${/^[a-zA-Z]$/.test(currentDrive.id) ? `${currentDrive.id}:` : (currentDrive.label || currentDrive.mountPoint)})`}>
+              저장공간 ({/^[a-zA-Z]$/.test(currentDrive.id) ? `${currentDrive.id}:` : (currentDrive.label || currentDrive.mountPoint)})
             </span>
             <span className="font-mono font-bold text-white shrink-0">
               {currentDrive.usedPercentage}%
