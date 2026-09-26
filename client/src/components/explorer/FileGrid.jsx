@@ -10,20 +10,14 @@ import {
   Subtitles
 } from 'lucide-react';
 import { useExplorer } from '../../contexts/ExplorerContext';
-import { getPreviewImageUrl, getThumbnailUrl } from '../../services/api';
+import { getThumbnailUrl } from '../../services/api';
 import useProgressiveItems from '../../hooks/useProgressiveItems';
-
-const SPECIAL_IMAGE_EXTS = ['.cr2', '.cr3', '.nef', '.arw', '.dng', '.raf', '.orf', '.rw2', '.pef', '.psd', '.ai', '.tiff', '.tif'];
 
 const FileThumbnail = React.memo(function FileThumbnail({ item, iconSize = 'h-12 w-12' }) {
   const [thumbError, setThumbError] = React.useState(false);
-  const ext = item.ext?.toLowerCase() || '';
-  const isSpecial = SPECIAL_IMAGE_EXTS.includes(ext);
 
   if (item.category === 'image' && !item.isDirectory && !thumbError) {
-    const src = isSpecial
-      ? getPreviewImageUrl(item.path)
-      : getThumbnailUrl(item.path, item.mtime);
+    const src = getThumbnailUrl(item.path, item.mtime);
     return (
       <div className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] overflow-hidden">
         <img

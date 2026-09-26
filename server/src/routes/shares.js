@@ -15,6 +15,7 @@ const {
 const { probeMedia, streamRangeFile, streamRemuxVideo } = require('../services/mediaService');
 const { getPreviewImage, extractAiPdf, parseHwpDocument, getExifData } = require('../services/previewService');
 const { loadAndConvertSubtitle, extractEmbeddedSubtitle } = require('../services/subtitleService');
+const { getThumbnail } = require('../services/thumbnailService');
 
 // ==========================================
 // 1. 공용 접근 라우트 (인증 불필요 - 누구나 링크로 접근 가능)
@@ -121,10 +122,42 @@ router.get('/public/:id/preview', async (req, res) => {
             }
         }
 
-        return res.sendFile(targetPath);
+        return res.sendFile(targetPath, { maxAge: '7d' });
     } catch (err) {
         return res.status(err.statusCode || 500).json({
             error: err.name || 'Preview Error',
+            message: err.message
+        });
+    }
+});
+
+/**
+ * GET /api/shares/public/:id/thumbnail
+ * 공유 폴더 내 파일 썸네일 (경량 이미지)
+ */
+router.get('/public/:id/thumbnail', async (req, res) => {
+    try {
+        const shareId = req.params.id;
+        const subpath = req.query.subpath;
+
+        if (!subpath) {
+            return res.status(400).json({ error: 'subpath parameter is required' });
+        }
+
+        const share = getShare(shareId);
+        const targetPath = validateShareSubpath(share, subpath);
+
+        if (!fs.existsSync(targetPath) || fs.statSync(targetPath).isDirectory()) {
+            return res.status(404).json({ error: 'File not found' });
+        }
+
+        const thumbnailPath = await getThumbnail(targetPath, req.query.size);
+        res.setHeader('Content-Type', 'image/jpeg');
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.sendFile(thumbnailPath);
+    } catch (err) {
+        return res.status(err.statusCode || 500).json({
+            error: err.name || 'Thumbnail Generation Failed',
             message: err.message
         });
     }

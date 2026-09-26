@@ -25,6 +25,7 @@ import {
   getPublicShare,
   getPublicShareDownloadUrl,
   getPublicSharePreviewUrl,
+  getPublicShareThumbnailUrl,
   getPublicShareStreamUrl
 } from '../../services/api';
 import PreviewModal from '../preview/PreviewModal';
@@ -56,6 +57,32 @@ function FileItemIcon({ category, className = 'h-5 w-5' }) {
   }
 }
 
+const SharedFileThumbnail = React.memo(function SharedFileThumbnail({ item }) {
+  const [thumbError, setThumbError] = React.useState(false);
+
+  if (item.category === 'image' && !item.isDirectory && !thumbError) {
+    const src = item.thumbnailUrl || item.previewUrl || item.downloadUrl;
+    return (
+      <div className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] dark:bg-neutral-900 overflow-hidden mb-2">
+        <img
+          src={src}
+          alt={item.name}
+          loading="lazy"
+          decoding="async"
+          onError={() => setThumbError(true)}
+          className="w-full h-full object-cover transition duration-200 group-hover:scale-105"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] dark:bg-neutral-900 overflow-hidden mb-2">
+      <FileItemIcon category={item.category} className="h-10 w-10 sm:h-12 sm:w-12" />
+    </div>
+  );
+});
+
 export default function SharedFolderView() {
   const { shareId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -77,13 +104,14 @@ export default function SharedFolderView() {
       .then((data) => {
         if (!isMounted) return;
 
-        // 파일들에 공유 전용 다운로드/스트림/미리보기 URL 매핑
+        // 파일들에 공유 전용 다운로드/스트림/미리보기/썸네일 URL 매핑
         const augmentedItems = (data.items || []).map((item) => ({
           ...item,
           path: item.subpath,
           shareId,
           downloadUrl: getPublicShareDownloadUrl(shareId, item.subpath),
           previewUrl: getPublicSharePreviewUrl(shareId, item.subpath),
+          thumbnailUrl: getPublicShareThumbnailUrl(shareId, item.subpath, item.mtime),
           streamUrl: getPublicShareStreamUrl(shareId, item.subpath)
         }));
 
@@ -114,8 +142,8 @@ export default function SharedFolderView() {
 
   // 점진적 로딩 (대용량 폴더 모바일 스크롤 최적화)
   const { visibleItems, hasMore, sentinelRef } = useProgressiveItems(filteredItems, {
-    initialCount: 60,
-    batchSize: 60
+    initialCount: 40,
+    batchSize: 40
   });
 
   const handleNavigateSubpath = (newSubpath) => {
@@ -293,27 +321,10 @@ export default function SharedFolderView() {
                     setPreviewItem(item);
                   }
                 }}
-                className="group relative flex flex-col rounded-2xl border border-[#E9E9E7] dark:border-neutral-800/80 bg-white dark:bg-[#18181c] p-2.5 sm:p-3 transition hover:shadow-md hover:border-[#7F6DF2]/50 cursor-pointer"
+                className="file-grid-item group relative flex flex-col rounded-2xl border border-[#E9E9E7] dark:border-neutral-800/80 bg-white dark:bg-[#18181c] p-2.5 sm:p-3 transition hover:shadow-md hover:border-[#7F6DF2]/50 cursor-pointer"
               >
                 {/* 썸네일/아이콘 */}
-                <div
-                  className="w-full aspect-square flex items-center justify-center rounded-xl bg-[#F7F6F3] dark:bg-neutral-900 overflow-hidden mb-2"
-                >
-                  {item.category === 'image' && !item.isDirectory ? (
-                    <img
-                      src={item.previewUrl || item.downloadUrl}
-                      alt={item.name}
-                      loading="lazy"
-                      className="w-full h-full object-cover transition duration-200 group-hover:scale-105"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <FileItemIcon category={item.category} className="h-10 w-10 sm:h-12 sm:w-12" />
-                  )}
-                </div>
+                <SharedFileThumbnail item={item} />
 
                 {/* 이름 및 크기 */}
                 <div className="flex-1 min-w-0">
@@ -355,12 +366,7 @@ export default function SharedFolderView() {
                 )}
               </div>
             ))}
-            {hasMore && (
-              <div ref={sentinelRef} className="col-span-full py-8 flex items-center justify-center text-neutral-400">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                <span className="text-[13px]">항목 더 불러오는 중...</span>
-              </div>
-            )}
+            {hasMore && <div ref={sentinelRef} className="col-span-full h-px" aria-hidden="true" />}
           </div>
         ) : (
           /* 목록 뷰 */

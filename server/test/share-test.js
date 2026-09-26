@@ -37,6 +37,10 @@ async function runShareTests() {
     fs.writeFileSync(file1, 'Hello World shared text file!');
     fs.writeFileSync(file2, 'Subfolder file content');
 
+    const photoPath = path.join(testBaseDir, 'photo.jpg');
+    const { execSync } = require('child_process');
+    execSync(`ffmpeg -y -f lavfi -i color=c=red:s=320x240:d=1 -vframes 1 "${photoPath}"`, { stdio: 'ignore' });
+
     let createdShare = null;
     let serverInstance = null;
 
@@ -152,12 +156,22 @@ async function runShareTests() {
         assert.strictEqual(downloadText, 'Hello World shared text file!');
         console.log('  ✅ PASS: Public file download accessible and content verified');
 
-        // 5.4 Public path traversal attempt via HTTP -> 403
+        // 5.4 Public image thumbnail (NO login required!) -> 200
+        const resPublicThumbnail = await fetch(`${BASE_URL}/api/shares/public/${createdShare.id}/thumbnail?subpath=photo.jpg&size=480`);
+        assert.strictEqual(resPublicThumbnail.status, 200);
+        assert.strictEqual(resPublicThumbnail.headers.get('content-type'), 'image/jpeg');
+        const thumbBuf = Buffer.from(await resPublicThumbnail.arrayBuffer());
+        assert.ok(thumbBuf.length > 0);
+        assert.strictEqual(thumbBuf[0], 0xff);
+        assert.strictEqual(thumbBuf[1], 0xd8);
+        console.log('  ✅ PASS: Public file thumbnail accessible and valid JPEG returned');
+
+        // 5.5 Public path traversal attempt via HTTP -> 403
         const resPublicAttack = await fetch(`${BASE_URL}/api/shares/public/${createdShare.id}?subpath=../../Windows`);
         assert.strictEqual(resPublicAttack.status, 403, 'Path traversal query should be 403');
         console.log('  ✅ PASS: Path traversal attempt over HTTP blocked with 403');
 
-        // 5.5 Expired share over HTTP -> 410
+        // 5.6 Expired share over HTTP -> 410
         const resPublicExpired = await fetch(`${BASE_URL}/api/shares/public/expired-test-id`);
         assert.strictEqual(resPublicExpired.status, 410, 'Expired share should return 410');
         console.log('  ✅ PASS: Expired share over HTTP returned 410 Gone');

@@ -173,6 +173,11 @@ export function getPublicSharePreviewUrl(shareId, subpath) {
   return `${BASE_URL}/api/shares/public/${shareId}/preview?subpath=${encodeURIComponent(subpath)}`;
 }
 
+export function getPublicShareThumbnailUrl(shareId, subpath, modifiedAt, size = 480) {
+  const version = modifiedAt ? `&v=${encodeURIComponent(modifiedAt)}` : '';
+  return `${BASE_URL}/api/shares/public/${shareId}/thumbnail?subpath=${encodeURIComponent(subpath)}&size=${size}${version}`;
+}
+
 export function getPublicShareStreamUrl(shareId, subpath) {
   return `${BASE_URL}/api/shares/public/${shareId}/stream?subpath=${encodeURIComponent(subpath)}`;
 }

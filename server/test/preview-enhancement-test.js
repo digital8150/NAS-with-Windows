@@ -192,6 +192,14 @@ async function runTests() {
         assert.strictEqual(exif.make, 'Canon');
         assert(exif.model.includes('EOS 5D'));
         console.log(`     Camera: ${exif.make} ${exif.model}, ISO: ${exif.iso}, Lens: ${exif.lens || 'N/A'}, Preview: ${(previewResult.buffer.length / 1024 / 1024).toFixed(2)} MB`);
+
+        const thumbnailPath = await getThumbnail(sampleCr2Path, 480);
+        assert(fs.existsSync(thumbnailPath));
+        const thumbBuf = await fs.promises.readFile(thumbnailPath);
+        assert(thumbBuf.length > 5000 && thumbBuf.length < 100000, `Thumbnail size should be lightweight (5KB-100KB), got: ${thumbBuf.length}B`);
+        assert.strictEqual(thumbBuf[0], 0xFF);
+        assert.strictEqual(thumbBuf[1], 0xD8);
+        console.log(`     CR2 Thumbnail generated successfully: ${(thumbBuf.length / 1024).toFixed(1)} KB`);
     });
 
     console.log('\n======================================================');
